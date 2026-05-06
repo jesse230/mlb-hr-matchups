@@ -229,7 +229,11 @@ class MLBApiClient:
                 total_3b += triples
 
             if total_ab == 0:
-                return None
+                return {
+                    "at_bats": 0, "hits": 0, "home_runs": 0,
+                    "avg": 0.0, "slg": 0.0, "obp": 0.0,
+                    "strike_outs": 0, "base_on_balls": 0,
+                }
 
             total_tb = total_1b + (2 * total_2b) + (3 * total_3b) + (4 * total_hr)
             avg = total_hits / total_ab

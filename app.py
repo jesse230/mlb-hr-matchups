@@ -258,7 +258,8 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results[:6]
-                h2h_data = results[6] if h2h_task else None
+                h2h_data = results[6] if (h2h_task and not isinstance(results[6], Exception)) else None
+                print(f"[H2H] Player {player_id} vs Pitcher {opposing_pitcher_id}: {h2h_data}")
 
                 if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
                     continue
