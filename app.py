@@ -347,7 +347,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                     "matchup_score": score,
                     "vs_pitch_breakdown": vs_pitch_breakdown,
                     "opposing_pitcher": opposing_pitcher_info,
-                    "h2h": h2h_data if isinstance(h2h_data, dict) and h2h_data.get("at_bats", 0) > 0 else None,
+                    "h2h": h2h_data if isinstance(h2h_data, dict) else None,
                 })
 
             candidates.sort(key=lambda x: x["matchup_score"], reverse=True)

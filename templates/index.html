@@ -1142,7 +1142,17 @@
         }
 
         function renderH2HSection(batter, opposingPitcher) {
-            if (!batter.h2h || !opposingPitcher) return '';
+            if (!opposingPitcher) return '';
+
+            if (!batter.h2h || batter.h2h.at_bats === 0) {
+                return `<div class="h2h-hover-container">
+                    <div class="h2h-badge">H2H: No prior matchups</div>
+                    <div class="h2h-tooltip">
+                        <div class="h2h-title">vs <span class="h2h-pitcher-name">${opposingPitcher.full_name}</span> (Career)</div>
+                        <div class="h2h-stats"><span class="lbl">First time facing each other</span></div>
+                    </div>
+                </div>`;
+            }
 
             const h = batter.h2h;
             return `<div class="h2h-hover-container">
