@@ -190,22 +190,63 @@ class MLBApiClient:
             )
             response.raise_for_status()
             data = response.json()
-            if "stats" in data and data["stats"] and "splits" in data["stats"][0]:
-                splits = data["stats"][0]["splits"]
-                if splits:
-                    stat = splits[0].get("stat", {})
-                    result = {
-                        "at_bats": stat.get("atBats", 0),
-                        "hits": stat.get("hits", 0),
-                        "home_runs": stat.get("homeRuns", 0),
-                        "avg": safe_float(stat.get("avg")),
-                        "slg": safe_float(stat.get("slg")),
-                        "obp": safe_float(stat.get("obp")),
-                        "strike_outs": stat.get("strikeOuts", 0),
-                        "base_on_balls": stat.get("baseOnBalls", 0),
-                    }
-                    self._set_cache(cache_key, result)
-                    return result
-            return None
-        except Exception:
+
+            if "stats" not in data or not data["stats"]:
+                return None
+
+            stats_entry = data["stats"][0]
+            if "splits" not in stats_entry or not stats_entry["splits"]:
+                return None
+
+            splits = stats_entry["splits"]
+
+            total_ab = 0
+            total_hits = 0
+            total_hr = 0
+            total_k = 0
+            total_bb = 0
+            total_1b = 0
+            total_2b = 0
+            total_3b = 0
+
+            for split in splits:
+                stat = split.get("stat", {})
+                ab = stat.get("atBats", 0)
+                hits = stat.get("hits", 0)
+                hr = stat.get("homeRuns", 0)
+                k = stat.get("strikeOuts", 0)
+                bb = stat.get("baseOnBalls", 0)
+                doubles = stat.get("doubles", 0)
+                triples = stat.get("triples", 0)
+
+                total_ab += ab
+                total_hits += hits
+                total_hr += hr
+                total_k += k
+                total_bb += bb
+                total_1b += (hits - doubles - triples - hr)
+                total_2b += doubles
+                total_3b += triples
+
+            if total_ab == 0:
+                return None
+
+            total_tb = total_1b + (2 * total_2b) + (3 * total_3b) + (4 * total_hr)
+            avg = total_hits / total_ab
+            slg = total_tb / total_ab
+
+            result = {
+                "at_bats": total_ab,
+                "hits": total_hits,
+                "home_runs": total_hr,
+                "avg": round(avg, 3),
+                "slg": round(slg, 3),
+                "obp": round((total_hits + total_bb) / (total_ab + total_bb), 3) if (total_ab + total_bb) > 0 else 0.0,
+                "strike_outs": total_k,
+                "base_on_balls": total_bb,
+            }
+            self._set_cache(cache_key, result)
+            return result
+        except Exception as e:
+            print(f"H2H error for batter {batter_id} vs pitcher {pitcher_id}: {e}")
             return None
