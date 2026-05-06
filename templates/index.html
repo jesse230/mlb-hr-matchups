@@ -723,12 +723,41 @@
             gap: 0;
         }
 
-        .h2h-section {
+        .h2h-hover-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .h2h-badge {
             background: #1a1a2e;
-            padding: 10px 12px;
+            border: 1px solid #45b7d1;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 0.7rem;
+            color: #45b7d1;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .h2h-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #0f0f23;
+            border: 1px solid #45b7d1;
             border-radius: 6px;
-            margin-top: 12px;
-            border-left: 3px solid #45b7d1;
+            padding: 10px 12px;
+            margin-top: 6px;
+            z-index: 100;
+            min-width: 280px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .h2h-hover-container:hover .h2h-tooltip {
+            display: block;
         }
 
         .h2h-title {
@@ -1115,17 +1144,20 @@
             if (!batter.h2h || !opposingPitcher) return '';
 
             const h = batter.h2h;
-            return `<div class="h2h-section">
-                <div class="h2h-title">vs <span class="h2h-pitcher-name">${opposingPitcher.full_name}</span> (Career)</div>
-                <div class="h2h-stats">
-                    <div class="h2h-stat"><span class="val">${h.at_bats}</span><span class="lbl">AB</span></div>
-                    <div class="h2h-stat"><span class="val">${h.hits}</span><span class="lbl">H</span></div>
-                    <div class="h2h-stat"><span class="val hr-val">${h.home_runs}</span><span class="lbl">HR</span></div>
-                    <div class="h2h-stat"><span class="val">${h.avg.toFixed(3)}</span><span class="lbl">AVG</span></div>
-                    <div class="h2h-stat"><span class="val">${h.slg.toFixed(3)}</span><span class="lbl">SLG</span></div>
-                    <div class="h2h-stat"><span class="val">${h.obp.toFixed(3)}</span><span class="lbl">OBP</span></div>
-                    <div class="h2h-stat"><span class="val k-val">${h.strike_outs}</span><span class="lbl">K</span></div>
-                    <div class="h2h-stat"><span class="val">${h.base_on_balls}</span><span class="lbl">BB</span></div>
+            return `<div class="h2h-hover-container">
+                <div class="h2h-badge">H2H: ${h.home_runs} HR | ${h.hits} H</div>
+                <div class="h2h-tooltip">
+                    <div class="h2h-title">vs <span class="h2h-pitcher-name">${opposingPitcher.full_name}</span> (Career)</div>
+                    <div class="h2h-stats">
+                        <div class="h2h-stat"><span class="val">${h.at_bats}</span><span class="lbl">AB</span></div>
+                        <div class="h2h-stat"><span class="val">${h.hits}</span><span class="lbl">H</span></div>
+                        <div class="h2h-stat"><span class="val hr-val">${h.home_runs}</span><span class="lbl">HR</span></div>
+                        <div class="h2h-stat"><span class="val">${h.avg.toFixed(3)}</span><span class="lbl">AVG</span></div>
+                        <div class="h2h-stat"><span class="val">${h.slg.toFixed(3)}</span><span class="lbl">SLG</span></div>
+                        <div class="h2h-stat"><span class="val">${h.obp.toFixed(3)}</span><span class="lbl">OBP</span></div>
+                        <div class="h2h-stat"><span class="val k-val">${h.strike_outs}</span><span class="lbl">K</span></div>
+                        <div class="h2h-stat"><span class="val">${h.base_on_balls}</span><span class="lbl">BB</span></div>
+                    </div>
                 </div>
             </div>`;
         }
