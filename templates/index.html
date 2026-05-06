@@ -989,8 +989,8 @@
             const homePitcherHtml = gameInfo.home_pitcher ? gameInfo.home_pitcher.full_name : 'TBD';
             const awayPitcherHtml = gameInfo.away_pitcher ? gameInfo.away_pitcher.full_name : 'TBD';
 
-            const awayBattersHtml = renderBatterSide(gameInfo.away_top_batters, 'Away', gameInfo.away_pitcher);
-            const homeBattersHtml = renderBatterSide(gameInfo.home_top_batters, 'Home', gameInfo.home_pitcher);
+            const awayBattersHtml = renderBatterSide(gameInfo.away_top_batters, 'Away', gameInfo.home_pitcher);
+            const homeBattersHtml = renderBatterSide(gameInfo.home_top_batters, 'Home', gameInfo.away_pitcher);
 
             contentEl.innerHTML = `
                 <div class="game-section">
