@@ -1,8 +1,22 @@
 import pandas as pd
+import math
 from datetime import datetime, date, timedelta
 from typing import Optional, Dict, List
 from pybaseball import statcast_pitcher, statcast_batter_pitch_arsenal, statcast_batter_exitvelo_barrels, statcast_batter
 import asyncio
+
+
+def safe_float(value, default=0.0) -> float:
+    if value is None:
+        return default
+    try:
+        f = float(value)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
+
 
 PITCH_TYPE_NAMES = {
     "FF": ("4-Seam Fastball", "#e94560"),
@@ -153,13 +167,13 @@ class PitchMixClient:
                     "display_name": display_name,
                     "color": color,
                     "pa": int(row.get("pa", 0)),
-                    "ba": float(row.get("ba", 0)) if row.get("ba") else 0.0,
-                    "slg": float(row.get("slg", 0)) if row.get("slg") else 0.0,
-                    "woba": float(row.get("woba", 0)) if row.get("woba") else 0.0,
-                    "whiff_pct": round(float(row.get("whiff_percent", 0)), 1) if row.get("whiff_percent") else 0.0,
-                    "k_pct": round(float(row.get("k_percent", 0)), 1) if row.get("k_percent") else 0.0,
-                    "hard_hit_pct": round(float(row.get("hard_hit_percent", 0)), 1) if row.get("hard_hit_percent") else 0.0,
-                    "est_slg": float(row.get("est_slg", 0)) if row.get("est_slg") else 0.0,
+                    "ba": safe_float(row.get("ba")),
+                    "slg": safe_float(row.get("slg")),
+                    "woba": safe_float(row.get("woba")),
+                    "whiff_pct": round(safe_float(row.get("whiff_percent")), 1),
+                    "k_pct": round(safe_float(row.get("k_percent")), 1),
+                    "hard_hit_pct": round(safe_float(row.get("hard_hit_percent")), 1),
+                    "est_slg": safe_float(row.get("est_slg")),
                 }
 
             if result:
@@ -194,15 +208,15 @@ class PitchMixClient:
             row = batter_rows.iloc[0]
             result = {
                 "barrels": int(row.get("barrels", 0)),
-                "brl_pct": round(float(row.get("brl_percent", 0)), 1) if row.get("brl_percent") else 0.0,
-                "brl_pa": round(float(row.get("brl_pa", 0)), 1) if row.get("brl_pa") else 0.0,
-                "avg_hit_speed": round(float(row.get("avg_hit_speed", 0)), 1) if row.get("avg_hit_speed") else 0.0,
-                "max_hit_speed": round(float(row.get("max_hit_speed", 0)), 1) if row.get("max_hit_speed") else 0.0,
-                "avg_hr_distance": round(float(row.get("avg_hr_distance", 0)), 1) if row.get("avg_hr_distance") else 0.0,
+                "brl_pct": round(safe_float(row.get("brl_percent")), 1),
+                "brl_pa": round(safe_float(row.get("brl_pa")), 1),
+                "avg_hit_speed": round(safe_float(row.get("avg_hit_speed")), 1),
+                "max_hit_speed": round(safe_float(row.get("max_hit_speed")), 1),
+                "avg_hr_distance": round(safe_float(row.get("avg_hr_distance")), 1),
                 "ev95plus": int(row.get("ev95plus", 0)),
-                "ev95_pct": round(float(row.get("ev95percent", 0)), 1) if row.get("ev95percent") else 0.0,
-                "fb_pct": round(float(row.get("fbld", 0)), 1) if row.get("fbld") else 0.0,
-                "gb_pct": round(float(row.get("gb", 0)), 1) if row.get("gb") else 0.0,
+                "ev95_pct": round(safe_float(row.get("ev95percent")), 1),
+                "fb_pct": round(safe_float(row.get("fbld")), 1),
+                "gb_pct": round(safe_float(row.get("gb")), 1),
             }
 
             self._set_cache(cache_key, result)

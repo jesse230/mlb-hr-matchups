@@ -3,11 +3,24 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from datetime import date, datetime, timedelta
 from typing import Optional, Dict, Any, List
+import math
 import asyncio
 
 from mlb_api import MLBApiClient
 from ballpark_factors import get_hr_factor
 from pitch_data import pitch_client
+
+
+def safe_float(value, default=0.0) -> float:
+    if value is None:
+        return default
+    try:
+        f = float(value)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
 
 app = FastAPI(title="MLB HR Matchups")
 templates = Jinja2Templates(directory="templates")
@@ -103,9 +116,9 @@ async def fetch_player_stats(player_entry: dict, season: int) -> Optional[dict]:
 
     ab = stat.get("atBats", 0)
     pa = stat.get("plateAppearances", ab)
-    avg = float(stat.get("avg", 0)) if stat.get("avg") else 0.0
-    slg = float(stat.get("slg", 0)) if stat.get("slg") else 0.0
-    ops = float(stat.get("ops", 0)) if stat.get("ops") else 0.0
+    avg = safe_float(stat.get("avg"))
+    slg = safe_float(stat.get("slg"))
+    ops = safe_float(stat.get("ops"))
     hr_rate = hr / pa if pa > 0 else 0.0
     iso = slg - avg
 
@@ -266,9 +279,9 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
                 ab = stat.get("atBats", 0)
                 pa = stat.get("plateAppearances", ab)
-                avg = float(stat.get("avg", 0)) if stat.get("avg") else 0.0
-                slg = float(stat.get("slg", 0)) if stat.get("slg") else 0.0
-                ops = float(stat.get("ops", 0)) if stat.get("ops") else 0.0
+                avg = safe_float(stat.get("avg"))
+                slg = safe_float(stat.get("slg"))
+                ops = safe_float(stat.get("ops"))
                 iso = slg - avg
 
                 batter_stats = {

@@ -1,9 +1,22 @@
 import httpx
 from datetime import datetime, date, timedelta
 from typing import Optional, Dict, Any
+import math
 import asyncio
 
 MLB_API_BASE = "https://statsapi.mlb.com/api/v1"
+
+
+def safe_float(value, default=0.0) -> float:
+    if value is None:
+        return default
+    try:
+        f = float(value)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
 
 
 class MLBApiClient:
@@ -185,9 +198,9 @@ class MLBApiClient:
                         "at_bats": stat.get("atBats", 0),
                         "hits": stat.get("hits", 0),
                         "home_runs": stat.get("homeRuns", 0),
-                        "avg": stat.get("avg", 0.0),
-                        "slg": stat.get("slg", 0.0),
-                        "obp": stat.get("obp", 0.0),
+                        "avg": safe_float(stat.get("avg")),
+                        "slg": safe_float(stat.get("slg")),
+                        "obp": safe_float(stat.get("obp")),
                         "strike_outs": stat.get("strikeOuts", 0),
                         "base_on_balls": stat.get("baseOnBalls", 0),
                     }
