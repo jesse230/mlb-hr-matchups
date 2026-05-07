@@ -241,7 +241,6 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
             async def process_batter(player_entry):
                 async with semaphore:
                     player_id = player_entry["person"]["id"]
-                    opposing_pitcher_id = opposing_pitcher_info.get("pitcher_id") if opposing_pitcher_info else None
 
                     stats_task = mlb_client.get_player_stats(player_id, season)
                     info_task = mlb_client.get_player_info(player_id)
@@ -249,16 +248,12 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                     arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
                     barrels_task = pitch_client.get_batter_barrels(player_id, season)
                     batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
-                    h2h_task = mlb_client.get_batter_vs_pitcher(player_id, opposing_pitcher_id) if opposing_pitcher_id else None
 
                     tasks = [stats_task, info_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
-                    if h2h_task:
-                        tasks.append(h2h_task)
 
                     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                    stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results[:6]
-                    h2h_data = results[6] if (h2h_task and not isinstance(results[6], Exception)) else None
+                    stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results
 
                     if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
                         return None
@@ -347,7 +342,6 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                         "matchup_score": score,
                         "vs_pitch_breakdown": vs_pitch_breakdown,
                         "opposing_pitcher": opposing_pitcher_info,
-                        "h2h": h2h_data if isinstance(h2h_data, dict) else None,
                     }
 
             tasks = [process_batter(p) for p in position_players]
