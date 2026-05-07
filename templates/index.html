@@ -84,6 +84,126 @@
             display: block;
         }
 
+        .top-matchups-section {
+            margin-bottom: 30px;
+        }
+
+        .top-matchups-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-matchups-title .icon {
+            color: #e94560;
+        }
+
+        .top-matchups-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .top-matchup-card {
+            background: #151515;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .top-matchup-card:hover {
+            border-color: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.15);
+        }
+
+        .top-matchup-card.rank-1 {
+            border-color: #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.1);
+        }
+
+        .top-matchup-rank {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #333;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .rank-1 .top-matchup-rank {
+            color: #e94560;
+        }
+
+        .top-matchup-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
+        }
+
+        .rank-1 .top-matchup-photo {
+            border-color: #e94560;
+        }
+
+        .top-matchup-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .top-matchup-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-matchup-team {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .top-matchup-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .top-matchup-stat {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .top-matchup-stat .val {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .top-matchup-stat .val.score {
+            color: #4ecca3;
+        }
+
+        .top-matchup-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
         .game-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -771,6 +891,10 @@
                 <div class="spinner"></div>
                 <p style="margin-top: 15px;">Loading games...</p>
             </div>
+            <div id="top-matchups-section" class="top-matchups-section" style="display: none;">
+                <div class="top-matchups-title"><span class="icon">&#9889;</span> Top Matchups Today</div>
+                <div id="top-matchups-grid" class="top-matchups-grid"></div>
+            </div>
             <div id="games-grid" class="game-grid"></div>
             <div id="no-games" class="no-games" style="display: none;">
                 <p>No games scheduled for this date.</p>
@@ -821,26 +945,78 @@
             gridEl.innerHTML = '';
             noGamesEl.style.display = 'none';
 
+            const topSectionEl = document.getElementById('top-matchups-section');
+            const topGridEl = document.getElementById('top-matchups-grid');
+            topSectionEl.style.display = 'none';
+            topGridEl.innerHTML = '';
+
             try {
-                const response = await fetch(`/api/schedule?game_date=${date}`);
-                const data = await response.json();
-                currentGames = data.games || [];
+                const [scheduleRes, matchupsRes] = await Promise.allSettled([
+                    fetch(`/api/schedule?game_date=${date}`),
+                    fetch(`/api/top-matchups?game_date=${date}`)
+                ]);
+
+                let games = [];
+                if (scheduleRes.status === 'fulfilled') {
+                    const data = await scheduleRes.value.json();
+                    games = data.games || [];
+                }
+
+                let topMatchups = [];
+                if (matchupsRes.status === 'fulfilled') {
+                    const data = await matchupsRes.value.json();
+                    topMatchups = data.top_matchups || [];
+                }
+
                 loadingEl.style.display = 'none';
 
-                if (currentGames.length === 0) {
+                if (topMatchups.length > 0) {
+                    renderTopMatchups(topMatchups);
+                    topSectionEl.style.display = 'block';
+                }
+
+                if (games.length === 0) {
                     noGamesEl.style.display = 'block';
                     return;
                 }
 
-                currentGames.forEach(game => {
+                games.forEach(game => {
                     const card = createGameCard(game);
                     gridEl.appendChild(card);
                 });
+                currentGames = games;
             } catch (error) {
                 loadingEl.style.display = 'none';
                 noGamesEl.style.display = 'block';
                 noGamesEl.innerHTML = '<p>Failed to load games. Please try again.</p>';
             }
+        }
+
+        function renderTopMatchups(matchups) {
+            const gridEl = document.getElementById('top-matchups-grid');
+            gridEl.innerHTML = '';
+
+            matchups.forEach((m, idx) => {
+                const card = document.createElement('div');
+                card.className = `top-matchup-card${idx === 0 ? ' rank-1' : ''}`;
+                card.onclick = () => loadGameDetail(m.gamePk);
+
+                const batter = m.batter;
+                card.innerHTML = `
+                    <div class="top-matchup-rank">#${idx + 1}</div>
+                    <img class="top-matchup-photo" src="${batter.photo_url}" alt="${batter.full_name}" loading="lazy" onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/v1/people/${batter.player_id}/headshot/67/current'">
+                    <div class="top-matchup-info">
+                        <div class="top-matchup-name">${batter.full_name}</div>
+                        <div class="top-matchup-team">${m.team} &middot; ${batter.position}</div>
+                        <div class="top-matchup-stats">
+                            <div class="top-matchup-stat"><span class="val score">${m.matchup_score.toFixed(2)}</span> <span>score</span></div>
+                            <div class="top-matchup-stat"><span class="val">${batter.home_runs}</span> <span>HR</span></div>
+                            <div class="top-matchup-stat"><span class="val">${batter.batting_avg.toFixed(3)}</span> <span>AVG</span></div>
+                        </div>
+                    </div>
+                `;
+                gridEl.appendChild(card);
+            });
         }
 
         function createGameCard(game) {

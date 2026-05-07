@@ -483,6 +483,54 @@ async def api_matchups(game_date: Optional[str] = Query(None)):
     return {"date": target_date.isoformat(), "games": games}
 
 
+@app.get("/api/top-matchups")
+async def api_top_matchups(game_date: Optional[str] = Query(None)):
+    target_date = None
+    if game_date:
+        try:
+            target_date = datetime.strptime(game_date, "%Y-%m-%d").date()
+        except ValueError:
+            target_date = date.today()
+    else:
+        target_date = date.today()
+
+    season = target_date.year
+    if target_date.month < 3:
+        season = target_date.year - 1
+
+    schedule_data = await mlb_client.get_schedule(target_date)
+
+    all_games = []
+    if "dates" in schedule_data and schedule_data["dates"]:
+        for day_data in schedule_data["dates"]:
+            for game in day_data.get("games", []):
+                all_games.append(game)
+
+    all_batters = []
+    for game in all_games:
+        home_team = game["teams"]["home"]["team"]
+        away_team = game["teams"]["away"]["team"]
+        game_infos = await fetch_game_matchups(game, target_date, season)
+        if not game_infos:
+            continue
+        info = game_infos[0]
+        for b in info.get("home_top_batters", []):
+            b["team"] = home_team["name"]
+            b["gamePk"] = game["gamePk"]
+            b["game_label"] = f"{away_team['name']} @ {home_team['name']}"
+            all_batters.append(b)
+        for b in info.get("away_top_batters", []):
+            b["team"] = away_team["name"]
+            b["gamePk"] = game["gamePk"]
+            b["game_label"] = f"{away_team['name']} @ {home_team['name']}"
+            all_batters.append(b)
+
+    all_batters.sort(key=lambda x: x["matchup_score"], reverse=True)
+    top_3 = all_batters[:3]
+
+    return {"date": target_date.isoformat(), "top_matchups": top_3}
+
+
 @app.get("/api/pitch-mix/{pitcher_id}")
 async def api_pitch_mix(pitcher_id: int):
     season = datetime.now().year
