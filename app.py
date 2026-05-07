@@ -232,125 +232,127 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                 if p.get("position", {}).get("abbreviation", "") in ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH", "OF"]
             ]
 
-            candidates = []
-
             opposing_weak_side = None
             if opposing_pitcher_info and opposing_pitcher_info.get("handedness_splits"):
                 opposing_weak_side = opposing_pitcher_info["handedness_splits"].get("weak_side")
 
-            for player_entry in position_players:
-                player_id = player_entry["person"]["id"]
+            semaphore = asyncio.Semaphore(10)
 
-                opposing_pitcher_id = opposing_pitcher_info.get("pitcher_id") if opposing_pitcher_info else None
+            async def process_batter(player_entry):
+                async with semaphore:
+                    player_id = player_entry["person"]["id"]
+                    opposing_pitcher_id = opposing_pitcher_info.get("pitcher_id") if opposing_pitcher_info else None
 
-                stats_task = mlb_client.get_player_stats(player_id, season)
-                info_task = mlb_client.get_player_info(player_id)
-                gamelog_task = mlb_client.get_player_game_log(player_id, season)
-                arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
-                barrels_task = pitch_client.get_batter_barrels(player_id, season)
-                batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
-                h2h_task = mlb_client.get_batter_vs_pitcher(player_id, opposing_pitcher_id) if opposing_pitcher_id else None
+                    stats_task = mlb_client.get_player_stats(player_id, season)
+                    info_task = mlb_client.get_player_info(player_id)
+                    gamelog_task = mlb_client.get_player_game_log(player_id, season)
+                    arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
+                    barrels_task = pitch_client.get_batter_barrels(player_id, season)
+                    batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
+                    h2h_task = mlb_client.get_batter_vs_pitcher(player_id, opposing_pitcher_id) if opposing_pitcher_id else None
 
-                tasks = [stats_task, info_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
-                if h2h_task:
-                    tasks.append(h2h_task)
+                    tasks = [stats_task, info_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
+                    if h2h_task:
+                        tasks.append(h2h_task)
 
-                results = await asyncio.gather(*tasks, return_exceptions=True)
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results[:6]
-                h2h_data = results[6] if (h2h_task and not isinstance(results[6], Exception)) else None
-                print(f"[H2H] Player {player_id} vs Pitcher {opposing_pitcher_id}: {h2h_data}")
+                    stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results[:6]
+                    h2h_data = results[6] if (h2h_task and not isinstance(results[6], Exception)) else None
 
-                if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
-                    continue
+                    if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
+                        return None
 
-                if not stats_data or "stats" not in stats_data or not stats_data["stats"]:
-                    continue
+                    if not stats_data or "stats" not in stats_data or not stats_data["stats"]:
+                        return None
 
-                stat_group = stats_data["stats"][0]
-                if "splits" not in stat_group or not stat_group["splits"]:
-                    continue
+                    stat_group = stats_data["stats"][0]
+                    if "splits" not in stat_group or not stat_group["splits"]:
+                        return None
 
-                split = stat_group["splits"][0]
-                stat = split.get("stat", {})
+                    split = stat_group["splits"][0]
+                    stat = split.get("stat", {})
 
-                hr = stat.get("homeRuns", 0)
-                if hr == 0:
-                    continue
+                    hr = stat.get("homeRuns", 0)
+                    if hr == 0:
+                        return None
 
-                ab = stat.get("atBats", 0)
-                pa = stat.get("plateAppearances", ab)
-                avg = safe_float(stat.get("avg"))
-                slg = safe_float(stat.get("slg"))
-                ops = safe_float(stat.get("ops"))
-                iso = slg - avg
+                    ab = stat.get("atBats", 0)
+                    pa = stat.get("plateAppearances", ab)
+                    avg = safe_float(stat.get("avg"))
+                    slg = safe_float(stat.get("slg"))
+                    ops = safe_float(stat.get("ops"))
+                    iso = slg - avg
 
-                batter_stats = {
-                    "player_id": player_id,
-                    "full_name": player_entry["person"]["fullName"],
-                    "position": player_entry.get("position", {}).get("abbreviation", ""),
-                    "home_runs": hr,
-                    "at_bats": ab,
-                    "plate_appearances": pa,
-                    "batting_avg": avg,
-                    "slugging_pct": slg,
-                    "ops": ops,
-                    "iso": iso,
-                    "photo_url": f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{player_id}/headshot/67/current",
-                }
+                    batter_stats = {
+                        "player_id": player_id,
+                        "full_name": player_entry["person"]["fullName"],
+                        "position": player_entry.get("position", {}).get("abbreviation", ""),
+                        "home_runs": hr,
+                        "at_bats": ab,
+                        "plate_appearances": pa,
+                        "batting_avg": avg,
+                        "slugging_pct": slg,
+                        "ops": ops,
+                        "iso": iso,
+                        "photo_url": f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{player_id}/headshot/67/current",
+                    }
 
-                arsenal_dict = arsenal if isinstance(arsenal, dict) else {}
-                barrel_dict = barrel_data if isinstance(barrel_data, dict) else None
-                batted_ball_dict = batted_ball_data if isinstance(batted_ball_data, dict) else None
-                recent_form = compute_recent_form(gamelog_data if not isinstance(gamelog_data, Exception) else None, target_date)
+                    arsenal_dict = arsenal if isinstance(arsenal, dict) else {}
+                    barrel_dict = barrel_data if isinstance(barrel_data, dict) else None
+                    batted_ball_dict = batted_ball_data if isinstance(batted_ball_data, dict) else None
+                    recent_form = compute_recent_form(gamelog_data if not isinstance(gamelog_data, Exception) else None, target_date)
 
-                bat_side = ""
-                platoon_advantage = False
-                if not isinstance(player_info, Exception) and player_info:
-                    bat_side = player_info.get("bat_side", "")
-                    if opposing_weak_side and bat_side == opposing_weak_side:
-                        platoon_advantage = True
+                    bat_side = ""
+                    platoon_advantage = False
+                    if not isinstance(player_info, Exception) and player_info:
+                        bat_side = player_info.get("bat_side", "")
+                        if opposing_weak_side and bat_side == opposing_weak_side:
+                            platoon_advantage = True
 
-                score = compute_matchup_score(batter_stats, arsenal_dict, opposing_pitcher_mix, barrel_dict, batted_ball_dict)
+                    score = compute_matchup_score(batter_stats, arsenal_dict, opposing_pitcher_mix, barrel_dict, batted_ball_dict)
 
-                vs_pitch_breakdown = []
-                for pitch in opposing_pitcher_mix:
-                    pc = pitch["pitch_code"]
-                    if pc in arsenal_dict:
-                        ab_data = arsenal_dict[pc]
-                        pitch_hr_rate = pitch.get("hr_rate", 0)
-                        pitch_slg_against = pitch.get("slg_against", 0)
-                        is_weak_spot = pitch_hr_rate > 1.5 or pitch_slg_against > 0.500
-                        vs_pitch_breakdown.append({
-                            "pitch_code": pc,
-                            "display_name": ab_data["display_name"],
-                            "color": ab_data["color"],
-                            "pa": ab_data["pa"],
-                            "ba": ab_data["ba"],
-                            "slg": ab_data["slg"],
-                            "whiff_pct": ab_data["whiff_pct"],
-                            "k_pct": ab_data["k_pct"],
-                            "hard_hit_pct": ab_data["hard_hit_pct"],
-                            "pitch_usage": pitch["usage_pct"],
-                            "pitcher_hr_allowed": pitch.get("hr_allowed", 0),
-                            "pitcher_slg_against": pitch_slg_against,
-                            "pitcher_hr_rate": pitch_hr_rate,
-                            "is_weak_spot": is_weak_spot,
-                        })
+                    vs_pitch_breakdown = []
+                    for pitch in opposing_pitcher_mix:
+                        pc = pitch["pitch_code"]
+                        if pc in arsenal_dict:
+                            ab_data = arsenal_dict[pc]
+                            pitch_hr_rate = pitch.get("hr_rate", 0)
+                            pitch_slg_against = pitch.get("slg_against", 0)
+                            is_weak_spot = pitch_hr_rate > 1.5 or pitch_slg_against > 0.500
+                            vs_pitch_breakdown.append({
+                                "pitch_code": pc,
+                                "display_name": ab_data["display_name"],
+                                "color": ab_data["color"],
+                                "pa": ab_data["pa"],
+                                "ba": ab_data["ba"],
+                                "slg": ab_data["slg"],
+                                "whiff_pct": ab_data["whiff_pct"],
+                                "k_pct": ab_data["k_pct"],
+                                "hard_hit_pct": ab_data["hard_hit_pct"],
+                                "pitch_usage": pitch["usage_pct"],
+                                "pitcher_hr_allowed": pitch.get("hr_allowed", 0),
+                                "pitcher_slg_against": pitch_slg_against,
+                                "pitcher_hr_rate": pitch_hr_rate,
+                                "is_weak_spot": is_weak_spot,
+                            })
 
-                candidates.append({
-                    "batter": batter_stats,
-                    "barrel_data": barrel_dict,
-                    "batted_ball_data": batted_ball_dict,
-                    "recent_form": recent_form,
-                    "bat_side": bat_side,
-                    "platoon_advantage": platoon_advantage,
-                    "matchup_score": score,
-                    "vs_pitch_breakdown": vs_pitch_breakdown,
-                    "opposing_pitcher": opposing_pitcher_info,
-                    "h2h": h2h_data if isinstance(h2h_data, dict) else None,
-                })
+                    return {
+                        "batter": batter_stats,
+                        "barrel_data": barrel_dict,
+                        "batted_ball_data": batted_ball_dict,
+                        "recent_form": recent_form,
+                        "bat_side": bat_side,
+                        "platoon_advantage": platoon_advantage,
+                        "matchup_score": score,
+                        "vs_pitch_breakdown": vs_pitch_breakdown,
+                        "opposing_pitcher": opposing_pitcher_info,
+                        "h2h": h2h_data if isinstance(h2h_data, dict) else None,
+                    }
 
+            tasks = [process_batter(p) for p in position_players]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            candidates = [r for r in results if r is not None and not isinstance(r, Exception)]
             candidates.sort(key=lambda x: x["matchup_score"], reverse=True)
             return candidates[:n]
 
