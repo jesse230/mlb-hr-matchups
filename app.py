@@ -244,16 +244,17 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
                     stats_task = mlb_client.get_player_stats(player_id, season)
                     info_task = mlb_client.get_player_info(player_id)
+                    status_task = mlb_client.get_player_status(player_id)
                     gamelog_task = mlb_client.get_player_game_log(player_id, season)
                     arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
                     barrels_task = pitch_client.get_batter_barrels(player_id, season)
                     batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
 
-                    tasks = [stats_task, info_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
+                    tasks = [stats_task, info_task, status_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
 
                     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                    stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results
+                    stats_data, player_info, player_status, gamelog_data, arsenal, barrel_data, batted_ball_data = results
 
                     if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
                         return None
@@ -270,6 +271,13 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
                     hr = stat.get("homeRuns", 0)
                     if hr == 0:
+                        return None
+
+                    status_info = player_status if not isinstance(player_status, Exception) and player_status else None
+                    status_code = status_info.get("status_code", "") if status_info else ""
+                    player_available = status_code == "A" or status_code == ""
+
+                    if not player_available:
                         return None
 
                     ab = stat.get("atBats", 0)
