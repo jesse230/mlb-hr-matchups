@@ -2,7 +2,7 @@ import pandas as pd
 import math
 from datetime import datetime, date, timedelta
 from typing import Optional, Dict, List
-from pybaseball import statcast_pitcher, statcast_batter_pitch_arsenal, statcast_batter_exitvelo_barrels, statcast_batter
+from pybaseball import statcast_pitcher, statcast_batter_pitch_arsenal, statcast_batter_exitvelo_barrels, statcast_batter, statcast
 import asyncio
 
 
@@ -97,7 +97,7 @@ class PitchMixClient:
             return self._season_data[cache_key]
         try:
             df = await asyncio.to_thread(
-                statcast_batter,
+                statcast,
                 f"{season}-03-01",
                 f"{season}-11-30"
             )
