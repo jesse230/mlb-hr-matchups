@@ -91,6 +91,91 @@ class PitchMixClient:
             print(f"Error fetching season barrels {season}: {e}")
             return None
 
+    async def _get_pitcher_season_data(self, pitcher_id: int, season: int) -> Optional[pd.DataFrame]:
+        cache_key = f"pitcher_data_{pitcher_id}_{season}"
+        if cache_key in self._season_data:
+            return self._season_data[cache_key]
+        try:
+            end = date.today()
+            start = date(season, 3, 1)
+            df = await asyncio.to_thread(
+                statcast_pitcher,
+                start.strftime("%Y-%m-%d"),
+                end.strftime("%Y-%m-%d"),
+                player_id=pitcher_id
+            )
+            if df is not None and not df.empty:
+                self._season_data[cache_key] = df
+            return df
+        except Exception as e:
+            print(f"Error fetching pitcher data {pitcher_id}: {e}")
+            return None
+
+    async def get_pitcher_pitch_mix(self, pitcher_id: int, season: int) -> Optional[List[dict]]:
+        cache_key = f"pitch_mix_{pitcher_id}_{season}"
+        cached = self._get_cached(cache_key)
+        if cached:
+            return cached
+
+        df = await self._get_pitcher_season_data(pitcher_id, season)
+        if df is None or df.empty or "pitch_type" not in df.columns:
+            return None
+
+        pitch_counts = df["pitch_type"].value_counts()
+        total_pitches = len(df)
+
+        result = []
+        for pitch_code, count in pitch_counts.items():
+            if not pitch_code or pitch_code not in PITCH_TYPE_NAMES:
+                continue
+
+            pitch_df = df[df["pitch_type"] == pitch_code]
+            usage_pct = (count / total_pitches) * 100
+            avg_speed = pitch_df["release_speed"].mean() if "release_speed" in pitch_df.columns else None
+
+            hr_allowed = 0
+            if "events" in pitch_df.columns:
+                hr_allowed = len(pitch_df[pitch_df["events"] == "home_run"])
+
+            hits = len(pitch_df[pitch_df["events"].isin(["single", "double", "triple", "home_run"])]) if "events" in pitch_df.columns else 0
+            ab_for_pitch = len(pitch_df[(pitch_df["bb_type"].notna()) | (pitch_df["events"].isin(["single", "double", "triple", "home_run", "strikeout", "field_error"]))]) if "events" in pitch_df.columns else count
+            slg_against = 0.0
+            if ab_for_pitch > 0 and "events" in pitch_df.columns:
+                total_bases = 0
+                for _, event_row in pitch_df.iterrows():
+                    evt = event_row.get("events", "")
+                    if "single" in str(evt):
+                        total_bases += 1
+                    elif "double" in str(evt):
+                        total_bases += 2
+                    elif "triple" in str(evt):
+                        total_bases += 3
+                    elif "home_run" in str(evt):
+                        total_bases += 4
+                slg_against = round(total_bases / ab_for_pitch, 3) if ab_for_pitch > 0 else 0.0
+
+            hr_rate = round((hr_allowed / count) * 100, 2) if count > 0 else 0.0
+
+            display_name, color = get_pitch_display(pitch_code)
+            result.append({
+                "pitch_code": pitch_code,
+                "display_name": display_name,
+                "color": color,
+                "count": int(count),
+                "usage_pct": round(usage_pct, 1),
+                "avg_speed": round(avg_speed, 1) if avg_speed and not pd.isna(avg_speed) else None,
+                "hr_allowed": hr_allowed,
+                "slg_against": slg_against,
+                "hr_rate": hr_rate,
+            })
+
+        result.sort(key=lambda x: x["usage_pct"], reverse=True)
+
+        if result:
+            self._set_cache(cache_key, result)
+            return result
+        return None
+
     async def get_batter_batted_ball_profile(self, batter_id: int, season: int) -> Optional[dict]:
         cache_key = f"batter_batted_ball_{batter_id}_{season}"
         cached = self._get_cached(cache_key)
