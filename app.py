@@ -256,7 +256,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
                     stats_data, player_info, player_status, gamelog_data, arsenal, barrel_data, batted_ball_data = results
 
-                    if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
+                    if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception) or isinstance(batted_ball_data, Exception):
                         return None
 
                     if not stats_data or "stats" not in stats_data or not stats_data["stats"]:
