@@ -139,7 +139,6 @@ class PitchMixClient:
 
         self._set_cache(cache_key, result)
         return result
-        return None
 
     async def get_batter_pitch_arsenal(self, batter_id: int, season: int) -> Optional[Dict[str, dict]]:
         cache_key = f"batter_arsenal_{batter_id}_{season}"
@@ -278,49 +277,6 @@ class PitchMixClient:
             self._set_cache(cache_key, result)
             return result
         return None
-
-    async def get_batter_batted_ball_profile(self, batter_id: int, season: int) -> Optional[dict]:
-        cache_key = f"batter_batted_ball_{batter_id}_{season}"
-        cached = self._get_cached(cache_key)
-        if cached:
-            return cached
-
-        df = await self._get_season_batted_ball(season)
-        if df is None or df.empty:
-            return None
-
-        batter_df = df[df["player_id"] == batter_id]
-        if batter_df.empty:
-            return None
-
-        bbe = batter_df[batter_df["bb_type"].notna()].copy()
-        if bbe.empty:
-            return None
-
-        total_bbe = len(bbe)
-
-        rhh = bbe[bbe["stand"] == "R"]
-        lhb = bbe[bbe["stand"] == "L"]
-
-        pull_count = 0
-        if not rhh.empty:
-            pull_count += len(rhh[rhh["hc_x"] > 125.44])
-        if not lhb.empty:
-            pull_count += len(lhb[lhb["hc_x"] < 125.44])
-
-        pull_rate = (pull_count / total_bbe) * 100 if total_bbe > 0 else 0
-
-        fly_balls = bbe[bbe["launch_angle"] >= 10]
-        fb_rate = (len(fly_balls) / total_bbe) * 100 if total_bbe > 0 else 0
-
-        result = {
-            "pull_pct": round(pull_rate, 1),
-            "fb_pct_la": round(fb_rate, 1),
-            "bbe_count": total_bbe,
-        }
-
-        self._set_cache(cache_key, result)
-        return result
 
 
 pitch_client = PitchMixClient()

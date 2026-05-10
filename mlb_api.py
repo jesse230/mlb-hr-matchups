@@ -103,30 +103,6 @@ class MLBApiClient:
         except Exception:
             return None
 
-    async def get_player_status(self, player_id: int) -> Optional[dict]:
-        cache_key = f"player_status_{player_id}"
-        cached = self._get_cached(cache_key)
-        if cached:
-            return cached
-
-        try:
-            response = await self.client.get(f"/people/{player_id}")
-            response.raise_for_status()
-            data = response.json()
-            if "people" in data and data["people"]:
-                person = data["people"][0]
-                status = person.get("currentStatus", {})
-                result = {
-                    "status_code": status.get("statusCode", ""),
-                    "description": status.get("description", ""),
-                    "detail": status.get("detail", ""),
-                }
-                self._set_cache(cache_key, result)
-                return result
-            return None
-        except Exception:
-            return None
-
     async def get_player_info(self, player_id: int) -> Optional[dict]:
         cache_key = f"player_info_{player_id}"
         cached = self._get_cached(cache_key)
