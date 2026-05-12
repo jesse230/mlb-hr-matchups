@@ -23,6 +23,9 @@ def safe_float(value, default=0.0) -> float:
         return default
 
 app = FastAPI(title="MLB HR Matchups")
+
+_game_cache: Dict[int, tuple[Any, datetime]] = {}
+_game_cache_ttl = timedelta(minutes=30)
 templates = Jinja2Templates(directory="templates")
 
 mlb_client = MLBApiClient()
@@ -449,10 +452,18 @@ async def api_game(game_pk: int, game_date: Optional[str] = Query(None)):
     if not target_game:
         return {"error": "Game not found"}
 
+    cached = _game_cache.get(game_pk)
+    if cached:
+        data, timestamp = cached
+        if datetime.now() - timestamp < _game_cache_ttl:
+            return data
+        del _game_cache[game_pk]
+
     game_infos = await fetch_game_matchups(target_game, target_date, season)
     if not game_infos:
         return {"error": "No matchup data available"}
 
+    _game_cache[game_pk] = (game_infos[0], datetime.now())
     return game_infos[0]
 
 
@@ -517,6 +528,8 @@ async def api_top_matchups(game_date: Optional[str] = Query(None)):
         home_team = game["teams"]["home"]["team"]
         away_team = game["teams"]["away"]["team"]
         info = game_infos[0]
+        game_pk = game["gamePk"]
+        _game_cache[game_pk] = (info, datetime.now())
         for b in info.get("home_top_batters", []):
             b["team"] = home_team["name"]
             b["gamePk"] = game["gamePk"]
