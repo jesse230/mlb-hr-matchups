@@ -507,12 +507,15 @@ async def api_top_matchups(game_date: Optional[str] = Query(None)):
                 all_games.append(game)
 
     all_batters = []
-    for game in all_games:
+    game_tasks = [fetch_game_matchups(game, target_date, season) for game in all_games]
+    game_results = await asyncio.gather(*game_tasks, return_exceptions=True)
+
+    for i, game in enumerate(all_games):
+        game_infos = game_results[i]
+        if isinstance(game_infos, Exception) or not game_infos:
+            continue
         home_team = game["teams"]["home"]["team"]
         away_team = game["teams"]["away"]["team"]
-        game_infos = await fetch_game_matchups(game, target_date, season)
-        if not game_infos:
-            continue
         info = game_infos[0]
         for b in info.get("home_top_batters", []):
             b["team"] = home_team["name"]

@@ -951,31 +951,15 @@
             topGridEl.innerHTML = '';
 
             try {
-                const [scheduleRes, matchupsRes] = await Promise.allSettled([
-                    fetch(`/api/schedule?game_date=${date}`),
-                    fetch(`/api/top-matchups?game_date=${date}`)
-                ]);
-
+                const scheduleRes = await fetch(`/api/schedule?game_date=${date}`);
                 let games = [];
-                if (scheduleRes.status === 'fulfilled') {
-                    const data = await scheduleRes.value.json();
+                if (scheduleRes.ok) {
+                    const data = await scheduleRes.json();
                     games = data.games || [];
                 }
 
-                let topMatchups = [];
-                if (matchupsRes.status === 'fulfilled') {
-                    const data = await matchupsRes.value.json();
-                    topMatchups = data.top_matchups || [];
-                }
-
-                loadingEl.style.display = 'none';
-
-                if (topMatchups.length > 0) {
-                    renderTopMatchups(topMatchups);
-                    topSectionEl.style.display = 'block';
-                }
-
                 if (games.length === 0) {
+                    loadingEl.style.display = 'none';
                     noGamesEl.style.display = 'block';
                     return;
                 }
@@ -985,6 +969,20 @@
                     gridEl.appendChild(card);
                 });
                 currentGames = games;
+
+                loadingEl.style.display = 'none';
+
+                const matchupsRes = await fetch(`/api/top-matchups?game_date=${date}`);
+                let topMatchups = [];
+                if (matchupsRes.ok) {
+                    const data = await matchupsRes.json();
+                    topMatchups = data.top_matchups || [];
+                }
+
+                if (topMatchups.length > 0) {
+                    renderTopMatchups(topMatchups);
+                    topSectionEl.style.display = 'block';
+                }
             } catch (error) {
                 loadingEl.style.display = 'none';
                 noGamesEl.style.display = 'block';
