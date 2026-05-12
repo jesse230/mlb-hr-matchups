@@ -406,10 +406,10 @@ async def api_schedule(game_date: Optional[str] = Query(None)):
 
                 games.append({
                     "gamePk": game["gamePk"],
-                    "home": {"name": home_team["name"], "id": home_team["id"]},
-                    "away": {"name": away_team["name"], "id": away_team["id"]},
-                    "home_pitcher": {"name": home_pitcher_entry.get("fullName"), "id": home_pitcher_entry.get("id")} if home_pitcher_entry else None,
-                    "away_pitcher": {"name": away_pitcher_entry.get("fullName"), "id": away_pitcher_entry.get("id")} if away_pitcher_entry else None,
+                    "home": {"name": home_team["name"], "id": home_team["id"], "logo": f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{home_team['id']}.svg"},
+                    "away": {"name": away_team["name"], "id": away_team["id"], "logo": f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{away_team['id']}.svg"},
+                    "home_pitcher": {"name": home_pitcher_entry.get("fullName"), "id": home_pitcher_entry.get("id"), "photo": f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{home_pitcher_entry.get('id')}/headshot/67/current"} if home_pitcher_entry else None,
+                    "away_pitcher": {"name": away_pitcher_entry.get("fullName"), "id": away_pitcher_entry.get("id"), "photo": f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{away_pitcher_entry.get('id')}/headshot/67/current"} if away_pitcher_entry else None,
                     "venue": venue,
                     "park_factor": round(park_factor, 2),
                     "game_time": game.get("gameDate", ""),

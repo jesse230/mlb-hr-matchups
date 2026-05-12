@@ -238,6 +238,18 @@
             flex: 1;
         }
 
+        .game-card-team-logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 8px;
+        }
+
+        .game-card-team-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         .game-card-team-name {
             font-size: 1.3rem;
             font-weight: 700;
@@ -272,6 +284,17 @@
 
         .game-card-pitcher {
             color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .game-card-pitcher-photo {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
         }
 
         .game-card-pitcher-name {
@@ -827,6 +850,31 @@
             font-weight: 600;
         }
 
+        .hot-streak-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            color: #ff9f43;
+            background: #2a1f0a;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .position-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            color: #fff;
+            background: #2a2a3e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            min-width: 28px;
+            text-align: center;
+        }
+
         .batter-photo {
             width: 40px;
             height: 40px;
@@ -1000,12 +1048,13 @@
                 card.onclick = () => loadGameDetail(m.gamePk);
 
                 const batter = m.batter;
+                const hotStreakHtml = m.recent_form && m.recent_form.hr >= 2 ? '<span class="hot-streak-badge">Hot</span>' : '';
                 card.innerHTML = `
                     <div class="top-matchup-rank">#${idx + 1}</div>
                     <img class="top-matchup-photo" src="${batter.photo_url}" alt="${batter.full_name}" loading="lazy" onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/v1/people/${batter.player_id}/headshot/67/current'">
                     <div class="top-matchup-info">
-                        <div class="top-matchup-name">${batter.full_name}</div>
-                        <div class="top-matchup-team">${m.team} &middot; ${batter.position}</div>
+                        <div class="top-matchup-name">${batter.full_name} ${hotStreakHtml}</div>
+                        <div class="top-matchup-team"><span class="position-badge">${batter.position}</span> ${m.team}</div>
                         <div class="top-matchup-stats">
                             <div class="top-matchup-stat"><span class="val score">${m.matchup_score.toFixed(2)}</span> <span>score</span></div>
                             <div class="top-matchup-stat"><span class="val">${batter.home_runs}</span> <span>HR</span></div>
@@ -1034,11 +1083,13 @@
             card.innerHTML = `
                 <div class="game-card-teams">
                     <div class="game-card-team">
+                        <div class="game-card-team-logo"><img src="${game.away.logo}" alt="${game.away.name}" loading="lazy"></div>
                         <div class="game-card-team-name">${game.away.name}</div>
                         <div class="game-card-team-label">Away</div>
                     </div>
                     <div class="game-card-vs">@</div>
                     <div class="game-card-team">
+                        <div class="game-card-team-logo"><img src="${game.home.logo}" alt="${game.home.name}" loading="lazy"></div>
                         <div class="game-card-team-name">${game.home.name}</div>
                         <div class="game-card-team-label">Home</div>
                     </div>
@@ -1046,10 +1097,10 @@
                 <div class="game-card-details">
                     <div class="game-card-pitchers">
                         <div class="game-card-pitcher">
-                            ${awayPitcher ? `<span class="game-card-pitcher-name">${awayPitcher.name}</span>` : '<span class="game-card-pitcher-tbd">TBD</span>'}
+                            ${awayPitcher ? `<img class="game-card-pitcher-photo" src="${awayPitcher.photo}" alt="${awayPitcher.name}" loading="lazy" onerror="this.style.display='none'"><span class="game-card-pitcher-name">${awayPitcher.name}</span>` : '<span class="game-card-pitcher-tbd">TBD</span>'}
                         </div>
                         <div class="game-card-pitcher">
-                            ${homePitcher ? `<span class="game-card-pitcher-name">${homePitcher.name}</span>` : '<span class="game-card-pitcher-tbd">TBD</span>'}
+                            ${homePitcher ? `<img class="game-card-pitcher-photo" src="${homePitcher.photo}" alt="${homePitcher.name}" loading="lazy" onerror="this.style.display='none'"><span class="game-card-pitcher-name">${homePitcher.name}</span>` : '<span class="game-card-pitcher-tbd">TBD</span>'}
                         </div>
                     </div>
                     <div class="game-card-meta">
@@ -1158,6 +1209,7 @@
                 if (idx > 0) html += '<div class="batter-card-secondary">';
 
                 const pitchBreakdownHtml = batter.vs_pitch_breakdown && opposingPitcher ? renderPitchBreakdown(batter.vs_pitch_breakdown, opposingPitcher, idx) : '';
+                const hotStreakHtml = batter.recent_form && batter.recent_form.hr >= 2 ? '<span class="hot-streak-badge">Hot</span>' : '';
 
                 html += `
                     <div class="batter-card-header">
@@ -1170,6 +1222,7 @@
                                         <span class="batter-name">${batter.batter.full_name}</span>
                                         <span class="bat-side">${batter.bat_side}</span>
                                         ${batter.platoon_advantage ? '<span class="platoon-badge">Platoon Advantage</span>' : ''}
+                                        ${hotStreakHtml}
                                         <span class="recent-form-tooltip">
                                             <div class="tooltip-title">Last 14 Days</div>
                                             <div class="tooltip-stats">
@@ -1180,7 +1233,7 @@
                                             </div>
                                         </span>
                                     </span>
-                                    <span class="batter-position">${batter.batter.position}</span>
+                                    <span class="position-badge">${batter.batter.position}</span>
                                     <span class="matchup-score">${batter.matchup_score.toFixed(3)} matchup</span>
                                 </div>
                             </div>
