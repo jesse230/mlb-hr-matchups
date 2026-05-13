@@ -161,9 +161,8 @@ def compute_matchup_score(batter_stats: dict, batter_arsenal: dict, pitch_mix: L
     barrel_pct = barrel_data.get("brl_pct", 0) if barrel_data else 0.0
     fb_pct = barrel_data.get("fb_pct", 0) if barrel_data else 0.0
     pull_pct = batted_ball_data.get("pull_pct", 0) if batted_ball_data else 0.0
-    pull_airball_pct = batted_ball_data.get("pull_airball_pct", 0) if batted_ball_data else 0.0
 
-    score = weighted_slg + (weighted_iso * 0.5) + (barrel_pct * 0.03) + (fb_pct * 0.005) + (pull_pct * 0.003) + (pull_airball_pct * 0.008)
+    score = weighted_slg + (weighted_iso * 0.5) + (barrel_pct * 0.03) + (fb_pct * 0.005) + (pull_pct * 0.003)
     return round(score, 4)
 
 
