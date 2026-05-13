@@ -213,7 +213,7 @@ class PitchMixClient:
 
         pull_rate = (pull_count / total_bbe) * 100 if total_bbe > 0 else 0
 
-        fly_balls = bbe[bbe["launch_angle"] >= 10]
+        fly_balls = bbe[bbe["launch_angle"] >= 25]
         fb_rate = (len(fly_balls) / total_bbe) * 100 if total_bbe > 0 else 0
 
         rhh_fb = fly_balls[fly_balls["stand"] == "R"]
