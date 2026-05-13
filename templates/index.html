@@ -892,6 +892,18 @@
             flex-wrap: wrap;
         }
 
+        .ss-badge {
+            font-size: 0.85rem;
+            background: #2a2a3e;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+
+        .pull-airball-val {
+            color: #e94560;
+            font-weight: 700;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8rem;
@@ -1275,11 +1287,13 @@
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.brl_pct}%</div><div class="stat-label">Brl%</div></div>
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.barrels}</div><div class="stat-label">Barrels</div></div>
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.avg_hit_speed}</div><div class="stat-label">Avg EV</div></div>
+                    <div class="stat-item"><div class="stat-value ss-badge" title="Sweet Spot%">🎯${batter.barrel_data.sweet_spot_pct}%</div><div class="stat-label">SS%</div></div>
                 `;
             }
 
             if (batter.batted_ball_data) {
                 html += `<div class="stat-item"><div class="stat-value">${batter.batted_ball_data.pull_pct}%</div><div class="stat-label">Pull%</div></div>`;
+                html += `<div class="stat-item"><div class="stat-value pull-airball-val">${batter.batted_ball_data.pull_airball_pct}%</div><div class="stat-label">Pull Air%</div></div>`;
             }
 
             html += '</div></div>';

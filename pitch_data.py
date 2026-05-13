@@ -216,9 +216,19 @@ class PitchMixClient:
         fly_balls = bbe[bbe["launch_angle"] >= 10]
         fb_rate = (len(fly_balls) / total_bbe) * 100 if total_bbe > 0 else 0
 
+        rhh_fb = fly_balls[fly_balls["stand"] == "R"]
+        lhb_fb = fly_balls[fly_balls["stand"] == "L"]
+        pull_fly_balls = 0
+        if not rhh_fb.empty:
+            pull_fly_balls += len(rhh_fb[rhh_fb["hc_x"] > 125.44])
+        if not lhb_fb.empty:
+            pull_fly_balls += len(lhb_fb[lhb_fb["hc_x"] < 125.44])
+        fly_balls_total = len(fly_balls)
+
         result = {
             "pull_pct": round(pull_rate, 1),
             "fb_pct_la": round(fb_rate, 1),
+            "pull_airball_pct": round((pull_fly_balls / fly_balls_total) * 100, 1) if fly_balls_total > 0 else 0,
             "bbe_count": total_bbe,
         }
 
@@ -291,6 +301,7 @@ class PitchMixClient:
             "ev95_pct": round(safe_float(row.get("ev95percent")), 1),
             "fb_pct": round(safe_float(row.get("fbld")), 1),
             "gb_pct": round(safe_float(row.get("gb")), 1),
+            "sweet_spot_pct": round(safe_float(row.get("anglesweetspotpercent")), 1),
         }
 
         self._set_cache(cache_key, result)
