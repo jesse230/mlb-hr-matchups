@@ -148,7 +148,7 @@ def compute_matchup_score(batter_stats: dict, batter_arsenal: dict, pitch_mix: L
     total_usage = 0.0
 
     for pitch_code, usage in pitch_usage_map.items():
-        if pitch_code in batter_arsenal:
+        if pitch_code in batter_arsenal and usage >= 0.10:
             b_slg = batter_arsenal[pitch_code]["slg"]
             b_iso = b_slg - batter_arsenal[pitch_code]["ba"]
             weighted_slg += b_slg * usage
@@ -319,6 +319,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                             pitch_hr_rate = pitch.get("hr_rate", 0)
                             pitch_slg_against = pitch.get("slg_against", 0)
                             is_weak_spot = pitch_hr_rate > 1.5 or pitch_slg_against > 0.500
+                            is_rare = pitch.get("usage_pct", 0) < 10
                             vs_pitch_breakdown.append({
                                 "pitch_code": pc,
                                 "display_name": ab_data["display_name"],
@@ -334,6 +335,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                                 "pitcher_slg_against": pitch_slg_against,
                                 "pitcher_hr_rate": pitch_hr_rate,
                                 "is_weak_spot": is_weak_spot,
+                                "is_rare": is_rare,
                             })
 
                     return {

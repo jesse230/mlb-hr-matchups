@@ -603,6 +603,11 @@
             border-left: 3px solid #888;
         }
 
+        .pitch-matchup-row.rare {
+            opacity: 0.45;
+            border-left: 3px solid #555;
+        }
+
         .pitch-badge {
             display: inline-block;
             padding: 2px 6px;
@@ -1314,10 +1319,12 @@
 
             vsPitchBreakdown.forEach(pitch => {
                 let rowClass = 'neutral';
-                if (pitch.is_weak_spot) rowClass = 'weak-spot';
+                if (pitch.is_rare) rowClass = 'rare';
+                else if (pitch.is_weak_spot) rowClass = 'weak-spot';
                 else if (pitch.slg >= 0.450) rowClass = 'strong';
                 else if (pitch.slg < 0.300) rowClass = 'weak';
 
+                const rareBadge = pitch.is_rare ? ' <span style="font-size:0.6rem;color:#666;">(rare)</span>' : '';
                 const weakSpotBadge = pitch.is_weak_spot ? '<span class="weak-spot-badge">Weak Spot</span>' : '';
                 const hrAllowedHtml = pitch.is_weak_spot
                     ? `<div class="pitch-stat"><span class="val pitch-weak-stat">${pitch.pitcher_hr_allowed} HR</span><span class="lbl">Allowed</span></div>`
@@ -1325,7 +1332,7 @@
 
                 html += `
                     <div class="pitch-matchup-row ${rowClass}">
-                        <span class="pitch-badge" style="background: ${pitch.color}">${pitch.display_name}${weakSpotBadge}</span>
+                        <span class="pitch-badge" style="background: ${pitch.color}">${pitch.display_name}${weakSpotBadge}${rareBadge}</span>
                         <div class="pitch-usage-bar">
                             <div class="pitch-usage-fill" style="width: ${pitch.pitch_usage}%; background: ${pitch.color}"></div>
                         </div>
