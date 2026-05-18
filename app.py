@@ -248,7 +248,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
             if opposing_pitcher_info and opposing_pitcher_info.get("handedness_splits"):
                 opposing_weak_side = opposing_pitcher_info["handedness_splits"].get("weak_side")
 
-            semaphore = asyncio.Semaphore(10)
+            semaphore = asyncio.Semaphore(15)
 
             async def process_batter(player_entry):
                 async with semaphore:
@@ -256,20 +256,20 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
                     stats_task = mlb_client.get_player_stats(player_id, season)
                     info_task = mlb_client.get_player_info(player_id)
-                    gamelog_task = mlb_client.get_player_game_log(player_id, season)
-                    espn_gamelog_task = espn_client.get_athlete_gamelog(player_id, season)
                     arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
                     barrels_task = pitch_client.get_batter_barrels(player_id, season)
                     batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
 
-                    tasks = [stats_task, info_task, gamelog_task, espn_gamelog_task, arsenal_task, barrels_task, batted_ball_task]
-
+                    tasks = [stats_task, info_task, arsenal_task, barrels_task, batted_ball_task]
                     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                    stats_data, player_info, gamelog_data, espn_gamelog_data, arsenal, barrel_data, batted_ball_data = results
+                    stats_data, player_info, arsenal, barrel_data, batted_ball_data = results
 
+                    gamelog_data = await mlb_client.get_player_game_log(player_id, season)
                     if isinstance(gamelog_data, Exception) or not gamelog_data:
-                        gamelog_data = espn_gamelog_data if not isinstance(espn_gamelog_data, Exception) else None
+                        gamelog_data = await espn_client.get_athlete_gamelog(player_id, season)
+                        if isinstance(gamelog_data, Exception):
+                            gamelog_data = None
 
                     if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
                         return None
@@ -362,10 +362,16 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                         "opposing_pitcher": opposing_pitcher_info,
                     }
 
+            import time
+            start_time = time.time()
+            print(f"Fetching {len(position_players)} batters for {team_name}...")
+
             tasks = [process_batter(p) for p in position_players]
             results = await asyncio.gather(*tasks, return_exceptions=True)
             candidates = [r for r in results if r is not None and not isinstance(r, Exception)]
             candidates.sort(key=lambda x: x["matchup_score"], reverse=True)
+            elapsed = round(time.time() - start_time, 1)
+            print(f"Done: {len(candidates)} candidates from {team_name} in {elapsed}s")
             return candidates[:n]
 
         home_top = await get_top_n_batters(home_roster, away_pitcher_info.get("pitch_mix") if away_pitcher_info else None, away_pitcher_info, home_team["name"], "home", n=3)
