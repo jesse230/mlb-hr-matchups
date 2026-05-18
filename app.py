@@ -9,6 +9,7 @@ import asyncio
 from mlb_api import MLBApiClient
 from ballpark_factors import get_hr_factor
 from pitch_data import pitch_client
+from espn_api import espn_client
 
 
 def safe_float(value, default=0.0) -> float:
@@ -92,6 +93,7 @@ def compute_recent_form(game_log_data: dict, target_date: date, days: int = 14) 
 async def shutdown_event():
     await mlb_client.close()
     await pitch_client.close()
+    await espn_client.close()
 
 
 async def fetch_player_stats(player_entry: dict, season: int) -> Optional[dict]:
@@ -141,6 +143,13 @@ async def fetch_player_stats(player_entry: dict, season: int) -> Optional[dict]:
 
 
 def compute_matchup_score(batter_stats: dict, batter_arsenal: dict, pitch_mix: List[dict], barrel_data: dict, batted_ball_data: dict = None) -> float:
+    if not pitch_mix:
+        barrel_pct = barrel_data.get("brl_pct", 0) if barrel_data else 0.0
+        fb_pct = barrel_data.get("fb_pct", 0) if barrel_data else 0.0
+        pull_pct = batted_ball_data.get("pull_pct", 0) if batted_ball_data else 0.0
+        score = batter_stats.get("slugging_pct", 0) + (barrel_pct * 0.03) + (fb_pct * 0.005) + (pull_pct * 0.003)
+        return round(score, 4)
+
     pitch_usage_map = {p["pitch_code"]: p["usage_pct"] / 100.0 for p in pitch_mix}
 
     weighted_slg = 0.0
@@ -189,6 +198,11 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
             return_exceptions=True
         )
 
+        if (isinstance(home_roster, Exception) or "roster" not in home_roster) and home_team.get("id"):
+            home_roster = await espn_client.get_roster(home_team["id"], season) or home_roster
+        if (isinstance(away_roster, Exception) or "roster" not in away_roster) and away_team.get("id"):
+            away_roster = await espn_client.get_roster(away_team["id"], season) or away_roster
+
         home_pitch_mix = None
         away_pitch_mix = None
         home_pitcher_splits = None
@@ -199,9 +213,6 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
         if away_pitcher_id:
             away_pitch_mix = await pitch_client.get_pitcher_pitch_mix(away_pitcher_id, season)
             away_pitcher_splits = await pitch_client.get_pitcher_handedness_splits(away_pitcher_id, season)
-
-        if not home_pitch_mix and not away_pitch_mix:
-            return []
 
         home_pitcher_info = {
             "full_name": probable_home_pitcher,
@@ -227,8 +238,6 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
         async def get_top_n_batters(roster_data, opposing_pitcher_mix, opposing_pitcher_info, team_name, side, n=3):
             if isinstance(roster_data, Exception) or "roster" not in roster_data:
                 return []
-            if not opposing_pitcher_mix:
-                return []
 
             position_players = [
                 p for p in roster_data["roster"]
@@ -248,15 +257,19 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
                     stats_task = mlb_client.get_player_stats(player_id, season)
                     info_task = mlb_client.get_player_info(player_id)
                     gamelog_task = mlb_client.get_player_game_log(player_id, season)
+                    espn_gamelog_task = espn_client.get_athlete_gamelog(player_id, season)
                     arsenal_task = pitch_client.get_batter_pitch_arsenal(player_id, season)
                     barrels_task = pitch_client.get_batter_barrels(player_id, season)
                     batted_ball_task = pitch_client.get_batter_batted_ball_profile(player_id, season)
 
-                    tasks = [stats_task, info_task, gamelog_task, arsenal_task, barrels_task, batted_ball_task]
+                    tasks = [stats_task, info_task, gamelog_task, espn_gamelog_task, arsenal_task, barrels_task, batted_ball_task]
 
                     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                    stats_data, player_info, gamelog_data, arsenal, barrel_data, batted_ball_data = results
+                    stats_data, player_info, gamelog_data, espn_gamelog_data, arsenal, barrel_data, batted_ball_data = results
+
+                    if isinstance(gamelog_data, Exception) or not gamelog_data:
+                        gamelog_data = espn_gamelog_data if not isinstance(espn_gamelog_data, Exception) else None
 
                     if isinstance(stats_data, Exception) or isinstance(arsenal, Exception) or isinstance(barrel_data, Exception):
                         return None
