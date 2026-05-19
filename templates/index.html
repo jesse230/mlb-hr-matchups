@@ -661,6 +661,9 @@
         }
 
         .batter-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 16px;
             padding-bottom: 12px;
             border-bottom: 2px solid var(--navy-light);
@@ -1265,6 +1268,7 @@
         let currentDate = null;
         let currentGames = [];
         const gameDataCache = {};
+        let topMatchupsController = null;
 
         function init() {
             const savedDate = localStorage.getItem('mlb-matchups-date');
@@ -1279,6 +1283,10 @@
         function onDateChange(selectedDate) {
             currentDate = selectedDate;
             localStorage.setItem('mlb-matchups-date', selectedDate);
+            if (topMatchupsController) {
+                topMatchupsController.abort();
+                topMatchupsController = null;
+            }
             showGamesView();
             loadGames(selectedDate);
         }
@@ -1296,6 +1304,10 @@
             const topGridEl = document.getElementById('top-matchups-grid');
             topSectionEl.style.display = 'none';
             topGridEl.innerHTML = '';
+
+            if (topMatchupsController) {
+                topMatchupsController.abort();
+            }
 
             try {
                 const scheduleRes = await fetch(`/api/schedule?game_date=${date}`);
@@ -1319,21 +1331,38 @@
 
                 loadingEl.style.display = 'none';
 
-                const matchupsRes = await fetch(`/api/top-matchups?game_date=${date}`);
-                let topMatchups = [];
-                if (matchupsRes.ok) {
-                    const data = await matchupsRes.json();
-                    topMatchups = data.top_matchups || [];
-                }
-
-                if (topMatchups.length > 0) {
-                    renderTopMatchups(topMatchups);
-                    topSectionEl.style.display = 'block';
-                }
+                loadTopMatchupsInBackground(date);
             } catch (error) {
                 loadingEl.style.display = 'none';
                 noGamesEl.style.display = 'block';
                 noGamesEl.innerHTML = '<p>Failed to load games. Please try again.</p>';
+            }
+        }
+
+        async function loadTopMatchupsInBackground(date) {
+            topMatchupsController = new AbortController();
+            const topSectionEl = document.getElementById('top-matchups-section');
+            const topGridEl = document.getElementById('top-matchups-grid');
+
+            try {
+                const matchupsRes = await fetch(`/api/top-matchups?game_date=${date}`, {
+                    signal: topMatchupsController.signal
+                });
+                topMatchupsController = null;
+
+                if (!matchupsRes.ok) return;
+
+                const data = await matchupsRes.json();
+                const topMatchups = data.top_matchups || [];
+
+                if (topMatchups.length > 0 && document.getElementById('games-view').classList.contains('active')) {
+                    renderTopMatchups(topMatchups);
+                    topSectionEl.style.display = 'block';
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    topMatchupsController = null;
+                }
             }
         }
 
@@ -1422,6 +1451,11 @@
         }
 
         async function loadGameDetail(gamePk) {
+            if (topMatchupsController) {
+                topMatchupsController.abort();
+                topMatchupsController = null;
+            }
+
             showDetailView();
 
             const loadingEl = document.getElementById('detail-loading');
