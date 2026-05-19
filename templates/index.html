@@ -4,155 +4,303 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MLB HR Matchups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --navy-deep: #0a0e1a;
+            --navy: #0f1628;
+            --navy-light: #1a2240;
+            --charcoal: #1c1c2e;
+            --amber: #FFB800;
+            --amber-dim: #cc9400;
+            --amber-glow: rgba(255, 184, 0, 0.15);
+            --red: #ff3b3b;
+            --red-dim: rgba(255, 59, 59, 0.15);
+            --green: #00e676;
+            --green-dim: rgba(0, 230, 118, 0.15);
+            --white: #f0f0f5;
+            --gray: #8888a0;
+            --gray-dark: #44445a;
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'Source Sans 3', sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            font-family: var(--font-body);
+            background: var(--navy-deep);
+            color: var(--white);
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1200px;
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--navy-deep);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--navy-light);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--amber-dim);
+        }
+
+        /* ── HEADER: Stadium Jumbotron ── */
+        .jumbotron {
+            position: relative;
+            background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+            border-bottom: 4px solid var(--amber);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Diagonal stripe pattern */
+        .jumbotron::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 20px,
+                rgba(255, 184, 0, 0.02) 20px,
+                rgba(255, 184, 0, 0.02) 40px
+            );
+            pointer-events: none;
+        }
+
+        /* Gradient mesh glow */
+        .jumbotron::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(ellipse, var(--amber-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .jumbotron-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 30px 30px;
         }
 
-        header {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 30px 0;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #e94560;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        h1 span {
-            color: #e94560;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #888;
-            font-size: 1.1rem;
-        }
-
-        .header-controls {
+        .title-row {
             display: flex;
+            align-items: baseline;
             justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .header-controls label {
-            font-size: 1.1rem;
-            color: #ccc;
+        .site-title {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            letter-spacing: 4px;
+            line-height: 1;
+            color: var(--white);
+            text-transform: uppercase;
         }
 
-        .header-controls input[type="date"] {
-            padding: 10px 15px;
+        .site-title .accent {
+            color: var(--amber);
+            text-shadow: 0 0 30px rgba(255, 184, 0, 0.4);
+        }
+
+        .site-subtitle {
+            font-family: var(--font-body);
             font-size: 1rem;
-            border: 2px solid #333;
-            border-radius: 8px;
-            background: #1a1a2e;
-            color: #fff;
-            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-align: center;
+            margin-top: 8px;
         }
 
-        .header-controls input[type="date"]:focus {
+        /* Date selector — scoreboard style */
+        .date-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .date-label {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: var(--amber);
+        }
+
+        .date-input {
+            font-family: var(--font-body);
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 10px 16px;
+            background: var(--navy-light);
+            border: 2px solid var(--gray-dark);
+            border-radius: 6px;
+            color: var(--white);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .date-input:focus {
             outline: none;
-            border-color: #e94560;
+            border-color: var(--amber);
+            box-shadow: 0 0 12px var(--amber-glow);
+        }
+
+        /* ── MAIN CONTAINER ── */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
         }
 
         .view {
             display: none;
         }
-
         .view.active {
             display: block;
         }
 
+        /* ── TOP MATCHUPS: Leaderboard ── */
         .top-matchups-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            animation: fadeSlideUp 0.5s ease both;
         }
 
-        .top-matchups-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 15px;
+        .section-header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--navy-light);
         }
 
-        .top-matchups-title .icon {
-            color: #e94560;
+        .section-icon {
+            font-size: 1.5rem;
+            color: var(--amber);
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         .top-matchups-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 16px;
         }
 
         .top-matchup-card {
-            background: #151515;
-            border: 1px solid #222;
-            border-radius: 12px;
-            padding: 18px;
+            position: relative;
+            background: var(--navy);
+            border: 1px solid var(--navy-light);
+            border-left: 4px solid var(--amber);
+            border-radius: 8px;
+            padding: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            overflow: hidden;
+        }
+
+        .top-matchup-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .top-matchup-card:hover {
-            border-color: #e94560;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            border-color: var(--amber);
         }
 
         .top-matchup-card.rank-1 {
-            border-color: #e94560;
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.1);
+            border-left-width: 6px;
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
         }
 
         .top-matchup-rank {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #333;
-            min-width: 30px;
-            text-align: center;
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: var(--gray-dark);
+            line-height: 1;
+            margin-bottom: 8px;
         }
 
         .rank-1 .top-matchup-rank {
-            color: #e94560;
+            color: var(--amber);
+            text-shadow: 0 0 20px rgba(255, 184, 0, 0.3);
+        }
+
+        .top-matchup-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .top-matchup-photo {
-            width: 50px;
-            height: 50px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #333;
+            border: 3px solid var(--navy-light);
+            flex-shrink: 0;
         }
 
         .rank-1 .top-matchup-photo {
-            border-color: #e94560;
+            border-color: var(--amber);
         }
 
         .top-matchup-info {
@@ -161,76 +309,116 @@
         }
 
         .top-matchup-name {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: var(--white);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        .top-matchup-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
         .top-matchup-team {
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: 2px;
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .position-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--navy-deep);
+            background: var(--amber);
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
         }
 
         .top-matchup-stats {
             display: flex;
-            gap: 12px;
-            margin-top: 6px;
+            gap: 16px;
+            margin-top: 10px;
         }
 
-        .top-matchup-stat {
-            font-size: 0.75rem;
-            color: #aaa;
+        .stat-block {
+            text-align: center;
         }
 
-        .top-matchup-stat .val {
-            color: #fff;
-            font-weight: 600;
+        .stat-block .val {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
         }
 
-        .top-matchup-stat .val.score {
-            color: #4ecca3;
+        .stat-block .lbl {
+            font-size: 0.65rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .top-matchup-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            color: #666;
-            font-size: 0.9rem;
+        .stat-block .val.score {
+            color: var(--green);
         }
 
+        .stat-block .val.hr {
+            color: var(--amber);
+        }
+
+        .stat-block .val.avg {
+            color: var(--white);
+        }
+
+        /* ── GAME CARDS: Scoreboard tiles ── */
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
         }
 
         .game-card {
-            background: #151515;
-            border: 1px solid #222;
-            border-radius: 12px;
+            position: relative;
+            background: var(--navy);
+            border: 1px solid var(--navy-light);
+            border-radius: 10px;
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         }
 
         .game-card:hover {
-            border-color: #e94560;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            border-color: var(--amber);
         }
 
         .game-card-teams {
-            background: #1a1a2e;
-            padding: 20px;
+            position: relative;
+            padding: 24px 20px;
+            background: var(--navy-light);
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Diagonal accent line */
+        .game-card-teams::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
         }
 
         .game-card-team {
@@ -239,8 +427,8 @@
         }
 
         .game-card-team-logo {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             margin: 0 auto 8px;
         }
 
@@ -251,60 +439,66 @@
         }
 
         .game-card-team-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            color: var(--white);
         }
 
         .game-card-team-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
+            letter-spacing: 2px;
+            color: var(--gray);
             margin-top: 2px;
         }
 
         .game-card-vs {
-            font-size: 0.9rem;
-            color: #e94560;
-            font-weight: 600;
-            padding: 0 15px;
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--amber);
+            padding: 0 20px;
         }
 
         .game-card-details {
-            padding: 15px 20px;
+            padding: 16px 20px;
         }
 
         .game-card-pitchers {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
+            margin-bottom: 12px;
         }
 
         .game-card-pitcher {
-            color: #ccc;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .game-card-pitcher:last-child {
+            justify-content: flex-end;
         }
 
         .game-card-pitcher-photo {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #333;
+            border: 2px solid var(--navy-light);
         }
 
         .game-card-pitcher-name {
-            font-weight: 600;
-            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--white);
         }
 
         .game-card-pitcher-tbd {
-            color: #666;
+            color: var(--gray-dark);
             font-style: italic;
+            font-size: 0.85rem;
         }
 
         .game-card-meta {
@@ -312,7 +506,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 0.8rem;
-            color: #888;
+            color: var(--gray);
         }
 
         .game-card-venue {
@@ -326,111 +520,124 @@
             display: inline-block;
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             margin-left: 8px;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
         }
 
         .park-hr-friendly {
-            background: #1b4332;
-            color: #4ecca3;
+            background: var(--green-dim);
+            color: var(--green);
         }
 
         .park-pitcher-friendly {
-            background: #4a1c1c;
-            color: #ff6b6b;
+            background: var(--red-dim);
+            color: var(--red);
         }
 
         .park-neutral {
-            background: #2a2a3e;
-            color: #888;
+            background: var(--navy-light);
+            color: var(--gray);
         }
 
         .game-card-time {
-            color: #4ecca3;
-            font-weight: 600;
+            color: var(--amber);
+            font-weight: 700;
             white-space: nowrap;
             margin-left: 10px;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
         }
 
-        .no-games {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-            font-size: 1.2rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #333;
-            border-top-color: #e94560;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
+        /* ── DETAIL VIEW ── */
         .back-button {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             padding: 10px 20px;
-            background: #1a1a2e;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: #ccc;
-            font-size: 0.95rem;
+            background: var(--navy-light);
+            border: 1px solid var(--gray-dark);
+            border-radius: 6px;
+            color: var(--gray);
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .back-button:hover {
-            background: #e94560;
-            border-color: #e94560;
-            color: #fff;
+            background: var(--amber);
+            border-color: var(--amber);
+            color: var(--navy-deep);
         }
 
         .game-section {
-            margin-bottom: 30px;
-            background: #151515;
+            background: var(--navy);
+            border: 1px solid var(--navy-light);
             border-radius: 10px;
             overflow: hidden;
-            border: 1px solid #222;
+            margin-bottom: 24px;
         }
 
         .game-header {
-            background: #1a1a2e;
-            padding: 15px 20px;
-            border-left: 4px solid #e94560;
+            position: relative;
+            background: var(--navy-light);
+            padding: 20px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: var(--amber);
         }
 
         .game-teams {
-            font-size: 1.3rem;
-            font-weight: 600;
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            letter-spacing: 2px;
         }
 
         .game-info {
-            color: #888;
-            font-size: 0.9rem;
+            color: var(--gray);
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
+        .pitcher-info-toggle {
+            cursor: pointer;
+            color: var(--amber);
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 2px;
+            padding: 6px 14px;
+            border: 1px solid var(--amber);
+            border-radius: 4px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .pitcher-info-toggle:hover {
+            background: var(--amber);
+            color: var(--navy-deep);
+        }
+
+        /* ── BATTER CARDS: Stat panels ── */
         .batter-cards {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -438,8 +645,8 @@
         }
 
         .batter-card {
-            padding: 20px;
-            border-right: 1px solid #222;
+            padding: 24px;
+            border-right: 1px solid var(--navy-light);
         }
 
         .batter-card:last-child {
@@ -447,195 +654,268 @@
         }
 
         .batter-card-secondary {
-            opacity: 0.88;
-            border-top: 1px solid #333;
+            opacity: 0.9;
+            border-top: 1px solid var(--navy-light);
+            padding-top: 20px;
+            margin-top: 20px;
         }
 
         .batter-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--navy-light);
         }
 
         .batter-card-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
-            margin-bottom: 4px;
+            letter-spacing: 2px;
+            color: var(--gray);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .batter-header-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .batter-photo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--navy-light);
+            flex-shrink: 0;
+        }
+
+        .batter-name-wrapper {
+            position: relative;
+            display: inline-block;
         }
 
         .batter-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            color: var(--white);
         }
 
-        .batter-position {
+        .bat-side {
             display: inline-block;
-            background: #e94560;
-            color: #fff;
+            font-size: 0.7rem;
+            color: var(--navy-deep);
+            background: var(--gray);
             padding: 2px 6px;
             border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .platoon-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            color: var(--navy-deep);
+            background: var(--green);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hot-streak-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            color: var(--navy-deep);
+            background: #ff9f43;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .matchup-score {
             font-size: 0.75rem;
-            margin-left: 8px;
+            color: var(--green);
+            background: var(--green-dim);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
         }
 
         .batter-hr-count {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #4ecca3;
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: var(--amber);
+            line-height: 1;
         }
 
         .batter-hr-label {
-            font-size: 0.75rem;
-            color: #888;
+            font-size: 0.7rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 2px;
             text-align: right;
         }
 
         .batter-stats-row {
             display: flex;
-            gap: 15px;
-            margin-bottom: 12px;
+            gap: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
         .stat-item {
             text-align: center;
+            padding: 8px 12px;
+            background: var(--navy-light);
+            border-radius: 6px;
+            min-width: 70px;
         }
 
         .stat-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: var(--white);
         }
 
         .stat-label {
-            font-size: 0.7rem;
-            color: #666;
+            font-size: 0.6rem;
+            color: var(--gray);
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
+        /* Batted ball section */
         .batted-ball-section {
-            background: #1a1a2e;
-            padding: 10px 12px;
+            background: var(--navy-light);
+            padding: 12px 16px;
             border-radius: 6px;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         .batted-ball-title {
-            font-size: 0.75rem;
-            color: #888;
+            font-size: 0.7rem;
+            color: var(--gray);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            font-weight: 700;
         }
 
         .batted-ball-stats {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
         }
 
+        /* Pitch matchup rows */
         .vs-pitcher-section {
-            margin-top: 15px;
+            margin-top: 16px;
         }
 
         .vs-pitcher-title {
-            font-size: 0.8rem;
-            color: #ff6b6b;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .vs-pitcher-name {
-            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--red);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
         }
 
         .pitch-legend {
             font-size: 0.7rem;
-            color: #666;
-            margin-bottom: 8px;
+            color: var(--gray);
+            margin-bottom: 10px;
             display: flex;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
         }
 
         .pitch-legend span {
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
 
         .pitch-legend .dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             display: inline-block;
         }
 
-        .pitch-legend .dot.green { background: #4ecca3; }
-        .pitch-legend .dot.red { background: #ff6b6b; }
-        .pitch-legend .dot.gray { background: #888; }
+        .pitch-legend .dot.green { background: var(--green); }
+        .pitch-legend .dot.red { background: var(--red); }
+        .pitch-legend .dot.gray { background: var(--gray); }
 
         .pitch-matchup-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
-            padding: 6px 8px;
-            border-radius: 4px;
-            background: #111;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--navy-deep);
         }
 
         .pitch-matchup-row.strong {
-            border-left: 3px solid #4ecca3;
+            border-left: 4px solid var(--green);
         }
 
         .pitch-matchup-row.weak {
-            border-left: 3px solid #ff6b6b;
+            border-left: 4px solid var(--red);
         }
 
         .pitch-matchup-row.neutral {
-            border-left: 3px solid #888;
+            border-left: 4px solid var(--gray);
         }
 
         .pitch-matchup-row.rare {
             opacity: 0.45;
-            border-left: 3px solid #555;
+            border-left: 4px solid var(--gray-dark);
+        }
+
+        .pitch-matchup-row.weak-spot {
+            border-left: 4px solid var(--red);
+            background: var(--red-dim);
         }
 
         .pitch-badge {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: 600;
-            color: #fff;
+            font-weight: 700;
+            color: var(--navy-deep);
             min-width: 80px;
             text-align: center;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
         }
 
         .pitch-usage-bar {
             flex: 1;
-            height: 16px;
-            background: #222;
-            border-radius: 3px;
+            height: 18px;
+            background: var(--navy-light);
+            border-radius: 4px;
             overflow: hidden;
         }
 
         .pitch-usage-fill {
             height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s;
+            border-radius: 4px;
+            transition: width 0.4s ease;
         }
 
         .pitch-matchup-stats {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
             font-size: 0.75rem;
         }
@@ -644,47 +924,101 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 42px;
+            min-width: 44px;
         }
 
         .pitch-stat .val {
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 1px;
         }
 
         .pitch-stat .lbl {
-            font-size: 0.6rem;
-            color: #666;
+            font-size: 0.55rem;
+            color: var(--gray);
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .pitch-stat.avg .val { color: #fff; }
-        .pitch-stat.slg .val { color: #4ecca3; }
-        .pitch-stat.whiff .val { color: #f39c12; }
-        .pitch-stat.k .val { color: #ff6b6b; }
-        .pitch-stat.pa .val { color: #888; }
+        .pitch-stat.avg .val { color: var(--white); }
+        .pitch-stat.slg .val { color: var(--green); }
+        .pitch-stat.whiff .val { color: #ff9f43; }
+        .pitch-stat.k .val { color: var(--red); }
+        .pitch-stat.pa .val { color: var(--gray); }
 
-        .pitcher-info-toggle {
-            cursor: pointer;
-            color: #4ecca3;
+        .pitch-weak-stat {
+            color: var(--red) !important;
+            font-weight: 700;
+        }
+
+        .weak-spot-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            color: var(--navy-deep);
+            background: var(--red);
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tooltip */
+        .batter-name-wrapper .recent-form-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 100;
+            background: var(--navy-light);
+            border: 1px solid var(--gray-dark);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: 6px;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .batter-name-wrapper:hover .recent-form-tooltip {
+            display: block;
+        }
+
+        .recent-form-tooltip .tooltip-title {
+            font-size: 0.65rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .recent-form-tooltip .tooltip-stats {
             font-size: 0.85rem;
-            padding: 5px 10px;
-            border: 1px solid #4ecca3;
-            border-radius: 4px;
-            background: transparent;
-            transition: all 0.2s;
+            color: var(--white);
         }
 
-        .pitcher-info-toggle:hover {
-            background: #4ecca3;
-            color: #0a0a0a;
+        .recent-form-tooltip .tooltip-stats .hr-val {
+            color: var(--amber);
+            font-weight: 700;
         }
 
+        .recent-form-tooltip .tooltip-stats .avg-val {
+            color: #ff9f43;
+            font-weight: 700;
+        }
+
+        .recent-form-tooltip .tooltip-stats .slg-val {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        /* Pitch mix section */
         .pitch-mix-section {
             display: none;
-            background: #111;
-            padding: 20px;
-            border-top: 1px solid #222;
+            background: var(--navy-deep);
+            padding: 24px;
+            border-top: 1px solid var(--navy-light);
         }
 
         .pitch-mix-section.visible {
@@ -698,217 +1032,116 @@
         }
 
         .pitcher-pitch-mix h4 {
-            color: #fff;
-            margin-bottom: 10px;
-            font-size: 1rem;
+            font-family: var(--font-display);
+            color: var(--white);
+            margin-bottom: 14px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
         }
 
         .pitch-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: 12px;
+            margin-bottom: 10px;
         }
 
         .pitch-bar-container {
             flex: 1;
-            height: 20px;
-            background: #222;
-            border-radius: 3px;
+            height: 22px;
+            background: var(--navy-light);
+            border-radius: 4px;
             overflow: hidden;
         }
 
         .pitch-bar {
             height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s;
+            border-radius: 4px;
+            transition: width 0.4s ease;
         }
 
         .pitch-stats {
-            font-size: 0.85rem;
-            color: #888;
-            min-width: 100px;
+            font-size: 0.8rem;
+            color: var(--gray);
+            min-width: 120px;
             text-align: right;
         }
 
         .pitch-stats .speed {
-            color: #4ecca3;
+            color: var(--amber);
+            font-weight: 700;
         }
 
         .pitch-stats .hr-allowed {
-            color: #ff6b6b;
+            color: var(--red);
+        }
+
+        /* ── LOADING / EMPTY STATES ── */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--navy-light);
+            border-top-color: var(--amber);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            margin-top: 16px;
+            color: var(--gray);
+            font-size: 1rem;
+        }
+
+        .no-games, .no-data {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--gray);
+            font-size: 1.2rem;
         }
 
         .no-data {
-            text-align: center;
             padding: 40px 20px;
-            color: #666;
-            font-size: 1.1rem;
         }
 
-        .matchup-score {
-            font-size: 0.75rem;
-            color: #4ecca3;
-            background: #1b4332;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-
-        .batter-name-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .batter-name-wrapper .recent-form-tooltip {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            z-index: 100;
-            background: #1a1a2e;
-            border: 1px solid #333;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin-top: 4px;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-
-        .batter-name-wrapper:hover .recent-form-tooltip {
-            display: block;
-        }
-
-        .recent-form-tooltip .tooltip-title {
-            font-size: 0.7rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .recent-form-tooltip .tooltip-stats {
-            font-size: 0.85rem;
-            color: #fff;
-        }
-
-        .recent-form-tooltip .tooltip-stats .hr-val {
-            color: #4ecca3;
-            font-weight: 600;
-        }
-
-        .recent-form-tooltip .tooltip-stats .avg-val {
-            color: #f39c12;
-            font-weight: 600;
-        }
-
-        .recent-form-tooltip .tooltip-stats .slg-val {
-            color: #e94560;
-            font-weight: 600;
-        }
-
-        .weak-spot-badge {
-            display: inline-block;
-            font-size: 0.65rem;
-            color: #ff6b6b;
-            background: #4a1c1c;
-            padding: 1px 5px;
-            border-radius: 3px;
-            margin-left: 6px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .pitch-matchup-row.weak-spot {
-            border-left: 3px solid #ff6b6b;
-            background: #1a0a0a;
-        }
-
-        .pitch-weak-stat {
-            color: #ff6b6b;
-            font-weight: 600;
-        }
-
-        .platoon-badge {
-            display: inline-block;
-            font-size: 0.65rem;
-            color: #4ecca3;
-            background: #1b4332;
-            padding: 1px 6px;
-            border-radius: 3px;
-            margin-left: 6px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .bat-side {
-            display: inline-block;
-            font-size: 0.7rem;
-            color: #888;
-            background: #222;
-            padding: 1px 5px;
-            border-radius: 3px;
-            margin-left: 6px;
-            font-weight: 600;
-        }
-
-        .hot-streak-badge {
-            display: inline-block;
-            font-size: 0.65rem;
-            color: #ff9f43;
-            background: #2a1f0a;
-            padding: 1px 6px;
-            border-radius: 3px;
-            margin-left: 6px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .position-badge {
-            display: inline-block;
-            font-size: 0.7rem;
-            color: #fff;
-            background: #2a2a3e;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            min-width: 28px;
-            text-align: center;
-        }
-
-        .batter-photo {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 10px;
-            border: 2px solid #333;
-            flex-shrink: 0;
-        }
-
-        .batter-header-content {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .ss-badge {
-            font-size: 0.85rem;
-            background: #2a2a3e;
-            border-radius: 4px;
-            padding: 2px 4px;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
+        /* ── ANIMATIONS ── */
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
+        .animate-in {
+            animation: fadeSlideUp 0.4s ease both;
+        }
+
+        .game-card:nth-child(1) { animation-delay: 0.05s; }
+        .game-card:nth-child(2) { animation-delay: 0.1s; }
+        .game-card:nth-child(3) { animation-delay: 0.15s; }
+        .game-card:nth-child(4) { animation-delay: 0.2s; }
+        .game-card:nth-child(5) { animation-delay: 0.25s; }
+        .game-card:nth-child(6) { animation-delay: 0.3s; }
+
+        .top-matchup-card:nth-child(1) { animation-delay: 0.05s; }
+        .top-matchup-card:nth-child(2) { animation-delay: 0.1s; }
+        .top-matchup-card:nth-child(3) { animation-delay: 0.15s; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
             .game-grid {
                 grid-template-columns: 1fr;
             }
@@ -919,7 +1152,11 @@
 
             .batter-card {
                 border-right: none;
-                border-bottom: 1px solid #222;
+                border-bottom: 1px solid var(--navy-light);
+            }
+
+            .batter-card:last-child {
+                border-bottom: none;
             }
 
             .pitch-mix-grid {
@@ -928,38 +1165,86 @@
 
             .game-header {
                 flex-direction: column;
-                gap: 10px;
                 align-items: flex-start;
+            }
+
+            .top-matchups-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .jumbotron-inner {
+                padding: 24px 16px 20px;
+            }
+
+            .site-title {
+                font-size: 2.5rem;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .game-card-teams {
+                padding: 16px;
+            }
+
+            .game-card-team-logo {
+                width: 44px;
+                height: 44px;
+            }
+
+            .game-card-team-name {
+                font-size: 1.1rem;
+            }
+
+            .batter-stats-row {
+                gap: 10px;
+            }
+
+            .stat-item {
+                min-width: 60px;
+                padding: 6px 8px;
+            }
+
+            .pitch-matchup-stats {
+                gap: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>MLB <span>HR</span> Matchups</h1>
-            <p class="subtitle">Top HR batters vs opposing pitcher pitch mix</p>
-            <div class="header-controls">
-                <label for="game-date">Date:</label>
-                <input type="date" id="game-date" onchange="onDateChange(this.value)">
+    <div class="jumbotron">
+        <div class="jumbotron-inner">
+            <div class="title-row">
+                <h1 class="site-title">MLB <span class="accent">HR</span> Matchups</h1>
+            </div>
+            <p class="site-subtitle">Top HR batters vs opposing pitcher pitch mix</p>
+            <div class="date-control">
+                <span class="date-label">Date:</span>
+                <input type="date" id="game-date" class="date-input" onchange="onDateChange(this.value)">
             </div>
         </div>
-    </header>
+    </div>
 
-    <div class="container">
+    <div class="main">
         <div id="games-view" class="view active">
             <div id="games-loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p style="margin-top: 15px;">Loading games...</p>
+                <p>Loading games...</p>
             </div>
             <div id="top-matchups-section" class="top-matchups-section" style="display: none;">
-                <div class="top-matchups-title"><span class="icon">&#9889;</span> Top Matchups Today</div>
+                <div class="section-header">
+                    <span class="section-icon">&#9889;</span>
+                    <span class="section-title">Top Matchups Today</span>
+                </div>
                 <div id="top-matchups-grid" class="top-matchups-grid"></div>
             </div>
             <div id="games-grid" class="game-grid"></div>
             <div id="no-games" class="no-games" style="display: none;">
                 <p>No games scheduled for this date.</p>
-                <p style="margin-top: 10px; font-size: 0.9rem;">Try selecting a different date during the MLB season (April-October).</p>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray-dark);">Try selecting a different date during the MLB season (April-October).</p>
             </div>
         </div>
 
@@ -970,7 +1255,7 @@
             </button>
             <div id="detail-loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p style="margin-top: 15px;">Loading matchup data...</p>
+                <p>Loading matchup data...</p>
             </div>
             <div id="detail-content"></div>
         </div>
@@ -1026,8 +1311,8 @@
                     return;
                 }
 
-                games.forEach(game => {
-                    const card = createGameCard(game);
+                games.forEach((game, idx) => {
+                    const card = createGameCard(game, idx);
                     gridEl.appendChild(card);
                 });
                 currentGames = games;
@@ -1058,21 +1343,26 @@
 
             matchups.forEach((m, idx) => {
                 const card = document.createElement('div');
-                card.className = `top-matchup-card${idx === 0 ? ' rank-1' : ''}`;
+                card.className = `top-matchup-card animate-in${idx === 0 ? ' rank-1' : ''}`;
                 card.onclick = () => loadGameDetail(m.gamePk);
 
                 const batter = m.batter;
                 const hotStreakHtml = m.recent_form && m.recent_form.hr >= 2 ? '<span class="hot-streak-badge">Hot</span>' : '';
                 card.innerHTML = `
                     <div class="top-matchup-rank">#${idx + 1}</div>
-                    <img class="top-matchup-photo" src="${batter.photo_url}" alt="${batter.full_name}" loading="lazy" onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/v1/people/${batter.player_id}/headshot/67/current'">
-                    <div class="top-matchup-info">
-                        <div class="top-matchup-name">${batter.full_name} ${hotStreakHtml}</div>
-                        <div class="top-matchup-team"><span class="position-badge">${batter.position}</span> ${m.team}</div>
-                        <div class="top-matchup-stats">
-                            <div class="top-matchup-stat"><span class="val score">${m.matchup_score.toFixed(2)}</span> <span>score</span></div>
-                            <div class="top-matchup-stat"><span class="val">${batter.home_runs}</span> <span>HR</span></div>
-                            <div class="top-matchup-stat"><span class="val">${batter.batting_avg.toFixed(3)}</span> <span>AVG</span></div>
+                    <div class="top-matchup-content">
+                        <img class="top-matchup-photo" src="${batter.photo_url}" alt="${batter.full_name}" loading="lazy" onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/v1/people/${batter.player_id}/headshot/67/current'">
+                        <div class="top-matchup-info">
+                            <div class="top-matchup-name">${batter.full_name} ${hotStreakHtml}</div>
+                            <div class="top-matchup-meta">
+                                <span class="top-matchup-team">${m.team}</span>
+                                <span class="position-badge">${batter.position}</span>
+                            </div>
+                            <div class="top-matchup-stats">
+                                <div class="stat-block"><div class="val score">${m.matchup_score.toFixed(2)}</div><div class="lbl">Score</div></div>
+                                <div class="stat-block"><div class="val hr">${batter.home_runs}</div><div class="lbl">HR</div></div>
+                                <div class="stat-block"><div class="val avg">${batter.batting_avg.toFixed(3)}</div><div class="lbl">AVG</div></div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1080,9 +1370,10 @@
             });
         }
 
-        function createGameCard(game) {
+        function createGameCard(game, idx) {
             const card = document.createElement('div');
-            card.className = 'game-card';
+            card.className = 'game-card animate-in';
+            card.style.animationDelay = `${idx * 0.05}s`;
             card.onclick = () => loadGameDetail(game.gamePk);
 
             const homePitcher = game.home_pitcher;
@@ -1101,7 +1392,7 @@
                         <div class="game-card-team-name">${game.away.name}</div>
                         <div class="game-card-team-label">Away</div>
                     </div>
-                    <div class="game-card-vs">@</div>
+                    <div class="game-card-vs">VS</div>
                     <div class="game-card-team">
                         <div class="game-card-team-logo"><img src="${game.home.logo}" alt="${game.home.name}" loading="lazy"></div>
                         <div class="game-card-team-name">${game.home.name}</div>
@@ -1172,9 +1463,6 @@
             if (parkFactor > 1.05) parkClass = 'park-hr-friendly';
             else if (parkFactor < 0.95) parkClass = 'park-pitcher-friendly';
 
-            const homePitcherHtml = gameInfo.home_pitcher ? gameInfo.home_pitcher.full_name : 'TBD';
-            const awayPitcherHtml = gameInfo.away_pitcher ? gameInfo.away_pitcher.full_name : 'TBD';
-
             const awayBattersHtml = renderBatterSide(gameInfo.away_top_batters, 'Away', gameInfo.home_pitcher);
             const homeBattersHtml = renderBatterSide(gameInfo.home_top_batters, 'Home', gameInfo.away_pitcher);
 
@@ -1183,7 +1471,7 @@
                     <div class="game-header">
                         <div class="game-teams">${gameInfo.away_team} @ ${gameInfo.home_team}</div>
                         <div class="game-info">
-                            ${gameInfo.venue} | Park:
+                            ${gameInfo.venue}
                             <span class="park-badge ${parkClass}">${parkFactor.toFixed(2)}</span>
                             <button class="pitcher-info-toggle" onclick="togglePitchMix(this)">Pitch Mix</button>
                         </div>
@@ -1198,11 +1486,11 @@
                         <div class="pitch-mix-grid">
                             <div class="pitcher-pitch-mix" data-pitcher-id="${gameInfo.home_pitcher?.pitcher_id || ''}" data-splits='${JSON.stringify(gameInfo.home_pitcher?.handedness_splits || {})}'>
                                 <h4>${gameInfo.home_pitcher ? `${gameInfo.home_pitcher.full_name} (${gameInfo.home_team})` : `${gameInfo.home_team} Pitcher: TBD`}</h4>
-                                <div class="pitch-mix-loading"><div class="spinner"></div><p style="margin-top: 10px;">Loading pitch data...</p></div>
+                                <div class="pitch-mix-loading"><div class="spinner"></div><p style="margin-top: 10px; color: var(--gray);">Loading pitch data...</p></div>
                             </div>
                             <div class="pitcher-pitch-mix" data-pitcher-id="${gameInfo.away_pitcher?.pitcher_id || ''}" data-splits='${JSON.stringify(gameInfo.away_pitcher?.handedness_splits || {})}'>
                                 <h4>${gameInfo.away_pitcher ? `${gameInfo.away_pitcher.full_name} (${gameInfo.away_team})` : `${gameInfo.away_team} Pitcher: TBD`}</h4>
-                                <div class="pitch-mix-loading"><div class="spinner"></div><p style="margin-top: 10px;">Loading pitch data...</p></div>
+                                <div class="pitch-mix-loading"><div class="spinner"></div><p style="margin-top: 10px; color: var(--gray);">Loading pitch data...</p></div>
                             </div>
                         </div>
                     </div>
@@ -1247,8 +1535,7 @@
                                             </div>
                                         </span>
                                     </span>
-                                    <span class="position-badge">${batter.batter.position}</span>
-                                    <span class="matchup-score">${batter.matchup_score.toFixed(3)} matchup</span>
+                                    <span class="matchup-score">${batter.matchup_score.toFixed(3)} MATCHUP</span>
                                 </div>
                             </div>
                         </div>
@@ -1270,7 +1557,7 @@
                 `;
 
                 if (idx > 0) html += '</div>';
-                if (idx < batters.length - 1) html += '<hr style="border: none; border-top: 1px solid #222; margin: 15px 0;">';
+                if (idx < batters.length - 1) html += '<hr style="border: none; border-top: 1px solid var(--navy-light); margin: 20px 0;">';
             });
 
             return html;
@@ -1287,7 +1574,7 @@
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.brl_pct}%</div><div class="stat-label">Brl%</div></div>
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.barrels}</div><div class="stat-label">Barrels</div></div>
                     <div class="stat-item"><div class="stat-value">${batter.barrel_data.avg_hit_speed}</div><div class="stat-label">Avg EV</div></div>
-                    <div class="stat-item"><div class="stat-value ss-badge" title="Sweet Spot%">🎯${batter.barrel_data.sweet_spot_pct}%</div><div class="stat-label">SS%</div></div>
+                    <div class="stat-item"><div class="stat-value">${batter.barrel_data.sweet_spot_pct}%</div><div class="stat-label">SS%</div></div>
                 `;
             }
 
@@ -1301,7 +1588,7 @@
 
         function renderPitchBreakdown(vsPitchBreakdown, opposingPitcher, batterIdx) {
             let html = `<div class="vs-pitcher-section">
-                <div class="vs-pitcher-title">vs <span class="vs-pitcher-name">${opposingPitcher.full_name}</span>'s Pitches</div>`;
+                <div class="vs-pitcher-title">vs <span class="vs-pitcher-name">${opposingPitcher.full_name}</span> Pitches</div>`;
 
             if (batterIdx === 0) {
                 html += `<div class="pitch-legend">
@@ -1318,7 +1605,7 @@
                 else if (pitch.slg >= 0.450) rowClass = 'strong';
                 else if (pitch.slg < 0.300) rowClass = 'weak';
 
-                const rareBadge = pitch.is_rare ? ' <span style="font-size:0.6rem;color:#666;">(rare)</span>' : '';
+                const rareBadge = pitch.is_rare ? ' <span style="font-size:0.6rem;color:var(--gray-dark);">(rare)</span>' : '';
                 const weakSpotBadge = pitch.is_weak_spot ? '<span class="weak-spot-badge">Weak Spot</span>' : '';
                 const hrAllowedHtml = pitch.is_weak_spot
                     ? `<div class="pitch-stat"><span class="val pitch-weak-stat">${pitch.pitcher_hr_allowed} HR</span><span class="lbl">Allowed</span></div>`
@@ -1391,7 +1678,7 @@
                 pitchMixCache[pitcherId] = data.pitch_mix;
                 renderPitchMix(container, data.pitch_mix, splitsData);
             } catch (error) {
-                container.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Failed to load pitch data</p>';
+                container.innerHTML = '<p style="color: var(--gray); font-size: 0.9rem;">Failed to load pitch data</p>';
             }
         }
 
@@ -1401,7 +1688,7 @@
             if (loading) loading.remove();
 
             if (!pitches || pitches.length === 0) {
-                container.innerHTML += '<p style="color: #666; font-size: 0.9rem;">No pitch data available</p>';
+                container.innerHTML += '<p style="color: var(--gray); font-size: 0.9rem;">No pitch data available</p>';
                 return;
             }
 
@@ -1409,7 +1696,7 @@
                 const row = document.createElement('div');
                 row.className = 'pitch-row';
                 const weakSpotBadge = pitch.is_weak_spot ? '<span class="weak-spot-badge">Weak Spot</span>' : '';
-                const weakSpotClass = pitch.is_weak_spot ? ' style="border-left: 3px solid #ff6b6b; background: #1a0a0a; padding-left: 8px;"' : '';
+                const weakSpotClass = pitch.is_weak_spot ? ' style="border-left: 3px solid var(--red); background: var(--red-dim); padding-left: 8px;"' : '';
                 const hrAllowedHtml = pitch.is_weak_spot
                     ? ` | <span class="hr-allowed">${pitch.hr_allowed} HR allowed | ${pitch.hr_rate}% HR rate | ${pitch.slg_against} SLG</span>`
                     : (pitch.hr_allowed > 0 ? ` | <span class="hr-allowed">${pitch.hr_allowed} HR</span>` : '');
@@ -1430,28 +1717,27 @@
             const splits = splitsData ? JSON.parse(splitsData) : {};
             if (splits && splits.L && splits.R) {
                 const splitsDiv = document.createElement('div');
-                splitsDiv.className = 'handedness-splits';
-                splitsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #1a1a2e; border-radius: 6px;';
+                splitsDiv.style.cssText = 'margin-top: 16px; padding: 12px; background: var(--navy-light); border-radius: 6px;';
                 const weakLabel = splits.weak_side ? (splits.weak_side === 'L' ? 'LHB' : 'RHB') : 'None';
                 splitsDiv.innerHTML = `
-                    <div style="font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">HR by Batter Handedness</div>
-                    <div style="display: flex; gap: 20px; font-size: 0.85rem;">
+                    <div style="font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 700;">HR by Batter Handedness</div>
+                    <div style="display: flex; gap: 24px; font-size: 0.85rem; flex-wrap: wrap;">
                         <div>
-                            <span style="color: #45b7d1; font-weight: 600;">vs LHB:</span>
-                            <span style="color: #fff;"> ${splits.L.hr} HR</span>
-                            <span style="color: #888;"> | ${splits.L.pa} PA</span>
-                            <span style="color: #ff6b6b;"> | ${splits.L.hr_rate}% HR</span>
-                            <span style="color: #4ecca3;"> | ${splits.L.slg} SLG</span>
+                            <span style="color: #45b7d1; font-weight: 700;">vs LHB:</span>
+                            <span style="color: var(--white);"> ${splits.L.hr} HR</span>
+                            <span style="color: var(--gray);"> | ${splits.L.pa} PA</span>
+                            <span style="color: var(--red);"> | ${splits.L.hr_rate}% HR</span>
+                            <span style="color: var(--green);"> | ${splits.L.slg} SLG</span>
                         </div>
                         <div>
-                            <span style="color: #e94560; font-weight: 600;">vs RHB:</span>
-                            <span style="color: #fff;"> ${splits.R.hr} HR</span>
-                            <span style="color: #888;"> | ${splits.R.pa} PA</span>
-                            <span style="color: #ff6b6b;"> | ${splits.R.hr_rate}% HR</span>
-                            <span style="color: #4ecca3;"> | ${splits.R.slg} SLG</span>
+                            <span style="color: var(--red); font-weight: 700;">vs RHB:</span>
+                            <span style="color: var(--white);"> ${splits.R.hr} HR</span>
+                            <span style="color: var(--gray);"> | ${splits.R.pa} PA</span>
+                            <span style="color: var(--red);"> | ${splits.R.hr_rate}% HR</span>
+                            <span style="color: var(--green);"> | ${splits.R.slg} SLG</span>
                         </div>
                     </div>
-                    ${splits.weak_side ? `<div style="margin-top: 8px; font-size: 0.75rem;"><span class="weak-spot-badge">Weak Side: ${weakLabel}</span></div>` : ''}
+                    ${splits.weak_side ? `<div style="margin-top: 10px; font-size: 0.75rem;"><span class="weak-spot-badge">Weak Side: ${weakLabel}</span></div>` : ''}
                 `;
                 container.appendChild(splitsDiv);
             }
