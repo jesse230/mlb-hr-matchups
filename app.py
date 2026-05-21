@@ -5,11 +5,13 @@ from datetime import date, datetime, timedelta
 from typing import Optional, Dict, Any, List
 import math
 import asyncio
+import json
 
 from mlb_api import MLBApiClient
 from ballpark_factors import get_hr_factor
 from pitch_data import pitch_client
 from espn_api import espn_client
+from mma_api import mma_client
 
 
 def safe_float(value, default=0.0) -> float:
@@ -94,6 +96,7 @@ async def shutdown_event():
     await mlb_client.close()
     await pitch_client.close()
     await espn_client.close()
+    await mma_client.close()
 
 
 async def fetch_player_stats(player_entry: dict, season: int) -> Optional[dict]:
@@ -400,7 +403,7 @@ async def fetch_game_matchups(game: dict, target_date: date, season: int) -> lis
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/api/schedule")
@@ -575,3 +578,333 @@ async def api_pitch_mix(pitcher_id: int):
         season -= 1
     pitch_mix = await pitch_client.get_pitcher_pitch_mix(pitcher_id, season)
     return {"pitcher_id": pitcher_id, "pitch_mix": pitch_mix or []}
+
+
+# ── MMA / UFC Endpoints ──
+
+
+async def fetch_event_matchups_summary(event_data: dict) -> dict:
+    event_id = event_data.get("id")
+    summary_data = await mma_client.get_event_summary(event_id)
+    parsed = mma_client.parse_event_summary(summary_data)
+
+    event_header = parsed.get("header", {})
+    fights = parsed.get("fights", [])
+
+    enriched_fights = []
+    for fight in fights:
+        fighter_a = fight["fighters"][0] if len(fight["fighters"]) > 0 else None
+        fighter_b = fight["fighters"][1] if len(fight["fighters"]) > 1 else None
+
+        odds_data = await mma_client.get_competition_odds(
+            f"{MMA_CORE_BASE}/events/{event_id}/competitions/{fight['id']}/odds"
+        ) if fight.get("id") else {}
+
+        odds = {}
+        if odds_data and "items" in odds_data:
+            for item in odds_data.get("items", []):
+                if item.get("provider", {}).get("name") == "Caesars":
+                    odds = item
+                    break
+            if not odds and len(odds_data.get("items", [])) > 0:
+                odds = odds_data["items"][0]
+
+        def odds_for_fighter(fighter_data, odds_info):
+            if not odds_info or not fighter_data:
+                return None
+            for detail in odds_info.get("details", []):
+                if detail.get("athlete", {}).get("id") == fighter_data.get("id"):
+                    return detail.get("moneyline", detail.get("overUnder"))
+            return None
+
+        enriched = {
+            "id": fight["id"],
+            "description": fight.get("description", ""),
+            "status": fight["status"],
+            "status_detail": fight.get("status_detail", ""),
+            "weight_class": fight.get("weight_class", "TBD"),
+            "winner": fight.get("winner"),
+        }
+
+        if fighter_a:
+            enriched["fighter_a"] = {
+                "id": fighter_a["id"],
+                "name": fighter_a["name"],
+                "headshot": fighter_a.get("headshot", ""),
+                "record": fighter_a.get("record", ""),
+                "weight": fighter_a.get("weight", ""),
+                "height": fighter_a.get("height", ""),
+                "stance": fighter_a.get("stance", ""),
+                "result": fighter_a.get("result", "PENDING"),
+                "odds": odds_for_fighter({"id": fighter_a["id"]}, odds),
+                "$ref": fighter_a.get("$ref", ""),
+            }
+
+        if fighter_b:
+            enriched["fighter_b"] = {
+                "id": fighter_b["id"],
+                "name": fighter_b["name"],
+                "headshot": fighter_b.get("headshot", ""),
+                "record": fighter_b.get("record", ""),
+                "weight": fighter_b.get("weight", ""),
+                "height": fighter_b.get("height", ""),
+                "stance": fighter_b.get("stance", ""),
+                "result": fighter_b.get("result", "PENDING"),
+                "odds": odds_for_fighter({"id": fighter_b["id"]}, odds),
+                "$ref": fighter_b.get("$ref", ""),
+            }
+
+        enriched_fights.append(enriched)
+
+    return {
+        "event_id": int(event_id) if event_id else 0,
+        "event_name": event_header.get("name", ""),
+        "event_date": event_header.get("date", ""),
+        "venue": event_header.get("venue", ""),
+        "location": event_header.get("location", ""),
+        "status": event_header.get("status", ""),
+        "notes_headline": event_header.get("notes_headline", ""),
+        "fights": enriched_fights,
+    }
+
+
+@app.get("/api/mma/scoreboard")
+async def api_mma_scoreboard(date_str: Optional[str] = Query(None), limit: int = Query(50)):
+    target_date = None
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            target_date = None
+
+    data = await mma_client.get_scoreboard(target_date, limit)
+
+    events = []
+    for evt in data.get("events", []):
+        competitions = evt.get("competitions", [])
+        main_event = ""
+        main_fighters = []
+        venue_info = evt.get("venue", {})
+
+        for comp in competitions:
+            comp_desc = comp.get("description", "")
+            competitors = comp.get("competitors", [])
+            if len(competitors) >= 2:
+                main_fighters = [
+                    competitors[0].get("athlete", {}).get("shortName", competitors[0].get("athlete", {}).get("displayName", "")),
+                    competitors[1].get("athlete", {}).get("shortName", competitors[1].get("athlete", {}).get("displayName", "")),
+                ]
+                main_event = comp_desc
+                break
+
+        status_type = evt.get("status", {}).get("type", {}).get("name", "")
+        status_detail = evt.get("status", {}).get("detail", "")
+
+        events.append({
+            "id": int(evt.get("id", 0)),
+            "name": evt.get("name", evt.get("shortName", "")),
+            "date": evt.get("date", ""),
+            "date_str": evt.get("date", "")[:10] if evt.get("date") else "",
+            "venue": venue_info.get("fullName", venue_info.get("name", "TBD")),
+            "location": f"{venue_info.get('address', {}).get('city', '')}, {venue_info.get('address', {}).get('state', '')}".strip(", "),
+            "status": status_detail or status_type,
+            "main_event": main_event,
+            "fighters": main_fighters,
+            "link": evt.get("link", ""),
+        })
+
+    events.sort(key=lambda e: e.get("date", ""), reverse=False)
+    return {"events": events}
+
+
+@app.get("/api/mma/event/{event_id}")
+async def api_mma_event(event_id: int, event_date: Optional[str] = Query(None)):
+    target_date = None
+    if event_date:
+        try:
+            target_date = datetime.strptime(event_date, "%Y-%m-%d").date()
+        except ValueError:
+            target_date = None
+    else:
+        target_date = date.today()
+
+    scoreboard = await mma_client.get_scoreboard(target_date, limit=100)
+
+    target_event = None
+    events_data = scoreboard.get("events", [])
+    for evt in events_data:
+        eid = evt.get("id")
+        try:
+            if int(eid) == event_id:
+                target_event = evt
+                break
+        except (ValueError, TypeError):
+            if str(eid) == str(event_id):
+                target_event = evt
+                break
+
+    if not target_event and target_date != date.today():
+        scoreboard = await mma_client.get_scoreboard(None, limit=100)
+        events_data = scoreboard.get("events", [])
+        for evt in events_data:
+            try:
+                if int(evt.get("id", 0)) == event_id:
+                    target_event = evt
+                    break
+            except (ValueError, TypeError):
+                if str(evt.get("id", "")) == str(event_id):
+                    target_event = evt
+                    break
+
+    if not target_event:
+        return {"error": "Event not found", "event_id": event_id}
+
+    event_name = target_event.get("name", "")
+    event_date_str = target_event.get("date", "")
+    venue_info = target_event.get("venue", {})
+    status_info = target_event.get("status", {})
+
+    athlete_ids = []
+    fights = []
+    for comp in target_event.get("competitions", []):
+        competitors = comp.get("competitors", [])
+        if len(competitors) < 2:
+            continue
+
+        fight = {
+            "id": comp.get("id", ""),
+            "description": comp.get("description", ""),
+            "weight_class": comp.get("type", {}).get("text") or comp.get("type", {}).get("abbreviation", "TBD"),
+            "status": comp.get("status", {}).get("type", {}).get("name", "SCHEDULED"),
+            "status_detail": comp.get("status", {}).get("type", {}).get("detail", ""),
+            "winner": None,
+        }
+
+        fighters = []
+        for c in competitors:
+            athlete = c.get("athlete", {})
+            fid = c.get("id") or athlete.get("id")
+
+            record_summary = ""
+            records = c.get("records", [])
+            for rec in records:
+                if rec.get("type") == "total":
+                    record_summary = rec.get("summary", "")
+                    break
+
+            result = "PENDING"
+            if c.get("winner"):
+                result = "WINNER"
+                fight["winner"] = fid
+
+            fighters.append({
+                "id": fid,
+                "name": athlete.get("displayName") or athlete.get("fullName", "TBD"),
+                "shortName": athlete.get("shortName", ""),
+                "record": record_summary,
+                "result": result,
+                "order": c.get("order", 0),
+                "flag": athlete.get("flag", {}).get("href", ""),
+            })
+            if fid:
+                athlete_ids.append(fid)
+
+        fight["fighter_a"] = fighters[0] if len(fighters) > 0 else None
+        fight["fighter_b"] = fighters[1] if len(fighters) > 1 else None
+        fights.append(fight)
+
+    headshot_map = {}
+    if athlete_ids:
+        unique_ids = list(set(athlete_ids))
+        tasks = []
+        semaphore = asyncio.Semaphore(15)
+
+        async def fetch_athlete_photo(aid):
+            async with semaphore:
+                try:
+                    ref = f"{MMA_CORE_BASE}/athletes/{aid}"
+                    data = await mma_client.get_athlete(ref)
+                    if data and "headshot" in data:
+                        return aid, data["headshot"].get("href", "") if isinstance(data["headshot"], dict) else ""
+                    return aid, f"https://a.espncdn.com/i/headshots/mma/players/full/{aid}.png"
+                except Exception:
+                    return aid, f"https://a.espncdn.com/i/headshots/mma/players/full/{aid}.png"
+
+        photo_results = await asyncio.gather(*[fetch_athlete_photo(aid) for aid in unique_ids], return_exceptions=True)
+        for result in photo_results:
+            if isinstance(result, tuple) and len(result) == 2:
+                headshot_map[result[0]] = result[1]
+
+    for fight in fights:
+        for key in ("fighter_a", "fighter_b"):
+            f = fight.get(key)
+            if f and f.get("id"):
+                f["headshot"] = headshot_map.get(f["id"], f"https://a.espncdn.com/i/headshots/mma/players/full/{f['id']}.png")
+
+    return {
+        "event_id": event_id,
+        "event_name": event_name,
+        "event_date": event_date_str,
+        "venue": venue_info.get("fullName", venue_info.get("name", "TBD")),
+        "location": f"{venue_info.get('address', {}).get('city', '')}, {venue_info.get('address', {}).get('country', '')}".strip(", "),
+        "status": status_info.get("type", {}).get("detail", status_info.get("type", {}).get("name", "")),
+        "fights": fights,
+    }
+
+
+@app.get("/api/mma/fighter/{fighter_id}")
+async def api_mma_fighter(fighter_id: int):
+    ref = f"{MMA_CORE_BASE}/athletes/{fighter_id}"
+    data = await mma_client.get_fighter_detail(ref)
+
+    if not data:
+        return {"error": "Fighter not found", "fighter_id": fighter_id}
+
+    return data
+
+
+@app.get("/api/mma/rankings")
+async def api_mma_rankings():
+    data = await mma_client.get_rankings()
+
+    rankings_list = []
+    for ranking in data.get("rankings", []):
+        items = []
+        for rank_item in ranking.get("ranks", []):
+            items.append({
+                "rank": rank_item.get("current", ""),
+                "name": rank_item.get("name", ""),
+                "headshot": rank_item.get("headshot", ""),
+                "record": rank_item.get("record", ""),
+                "id": rank_item.get("athlete_id"),
+            })
+        if items:
+            rankings_list.append({
+                "weightClass": ranking.get("name", ranking.get("shortName", "")),
+                "fighters": items,
+            })
+
+    return {"rankings": rankings_list}
+
+
+@app.get("/api/mma/news")
+async def api_mma_news(limit: int = Query(15)):
+    data = await mma_client.get_news(limit)
+
+    articles = []
+    for article in data.get("articles", [])[:limit]:
+        articles.append({
+            "headline": article.get("headline", ""),
+            "description": article.get("description", ""),
+            "link": article.get("links", {}).get("web", {}).get("href", ""),
+            "published": article.get("published", ""),
+            "image": "",
+        })
+        images = article.get("images", [])
+        if images:
+            articles[-1]["image"] = images[0].get("url", "")
+
+    return {"articles": articles, "count": len(articles)}
+
+
+MMA_CORE_BASE = "https://sports.core.api.espn.com/v2/sports/mma/leagues/ufc"

@@ -25,6 +25,14 @@
             --gray-dark: #44445a;
             --font-display: 'Bebas Neue', sans-serif;
             --font-body: 'Source Sans 3', sans-serif;
+            --mma-red: #e63946;
+            --mma-red-dim: rgba(230, 57, 70, 0.12);
+            --mma-red-glow: rgba(230, 57, 70, 0.15);
+            --mma-orange: #f4a261;
+            --mma-brown: #2b1f1a;
+            --mma-surface: #1c1410;
+            --mma-surface-light: #281a14;
+            --mma-border: #3a2520;
         }
 
         * {
@@ -1215,52 +1223,579 @@
                 gap: 8px;
             }
         }
+
+        /* ── TAB NAVIGATION ── */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            padding: 10px 28px;
+            background: transparent;
+            border: 2px solid var(--gray-dark);
+            border-radius: 6px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--gray);
+            color: var(--white);
+        }
+
+        .tab-btn.active {
+            border-color: var(--amber);
+            color: var(--amber);
+            background: var(--amber-glow);
+        }
+
+        .tab-btn.mma-tab.active {
+            border-color: var(--mma-red);
+            color: var(--mma-red);
+            background: var(--mma-red-dim);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ── MMA: Events Cards ── */
+        .mma-section-title {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: var(--white);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--mma-border);
+        }
+
+        .mma-events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .mma-event-card {
+            background: var(--mma-surface);
+            border: 1px solid var(--mma-border);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .mma-event-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(230, 57, 70, 0.15);
+            border-color: var(--mma-red);
+        }
+
+        .mma-event-card-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--mma-border);
+            background: var(--mma-surface-light);
+        }
+
+        .mma-event-card-name {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: var(--white);
+            margin-bottom: 4px;
+        }
+
+        .mma-event-card-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mma-event-card-body {
+            padding: 14px 18px;
+        }
+
+        .mma-event-card-venue {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .mma-event-card-main-event {
+            font-size: 0.7rem;
+            color: var(--mma-red);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .mma-event-card-fighters {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--white);
+        }
+
+        .mma-event-card-fighters .vs-dot {
+            color: var(--mma-red);
+            margin: 0 8px;
+        }
+
+        .mma-event-card-status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-upcoming { background: var(--mma-red-dim); color: var(--mma-red); }
+        .status-live { background: rgba(0, 230, 118, 0.15); color: var(--green); }
+        .status-finished { background: var(--navy-light); color: var(--gray); }
+
+        /* ── MMA: Fight Card (Event Detail) ── */
+        .mma-fight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .mma-fight-row {
+            background: var(--mma-surface);
+            border: 1px solid var(--mma-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mma-fight-row:first-child {
+            border-left: 3px solid var(--mma-red);
+        }
+
+        .mma-fight-header {
+            padding: 10px 18px;
+            background: var(--mma-surface-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--mma-border);
+        }
+
+        .mma-fight-weight {
+            font-size: 0.7rem;
+            color: var(--mma-red);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .mma-fight-order {
+            font-size: 0.7rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mma-fight-matchup {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            padding: 16px 12px;
+        }
+
+        .mma-fighter-block {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .mma-fighter-block.winner {
+            position: relative;
+        }
+
+        .mma-fighter-block.winner::after {
+            content: 'W';
+            position: absolute;
+            top: -4px;
+            right: 8px;
+            font-size: 0.55rem;
+            font-weight: 900;
+            color: var(--navy-deep);
+            background: var(--mma-red);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .mma-fighter-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--mma-border);
+            margin-bottom: 6px;
+        }
+
+        .mma-fighter-name {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--white);
+        }
+
+        .mma-fighter-record {
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .mma-fighter-odds {
+            font-size: 0.7rem;
+            color: var(--mma-orange);
+            margin-top: 2px;
+            font-weight: 700;
+        }
+
+        .mma-fighter-result {
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 4px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .result-win { background: var(--mma-red-dim); color: var(--mma-red); }
+        .result-loss { background: var(--navy-light); color: var(--gray); }
+        .result-pending { background: transparent; color: var(--gray-dark); }
+
+        .mma-fight-vs {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--mma-red);
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+
+        .mma-fight-detail-info {
+            padding: 10px 18px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid var(--mma-border);
+            flex-wrap: wrap;
+        }
+
+        .mma-fight-stats-row {
+            display: flex;
+            gap: 20px;
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .mma-fight-stats-row span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .mma-fight-stats-row .stat-label-mini {
+            color: var(--gray-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mma-fight-stats-row .stat-val-mini {
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        /* ── MMA: Rankings ── */
+        .mma-rankings-section {
+            background: var(--mma-surface);
+            border: 1px solid var(--mma-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .mma-rankings-header {
+            padding: 14px 18px;
+            background: var(--mma-surface-light);
+            border-bottom: 2px solid var(--mma-red);
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: var(--white);
+        }
+
+        .mma-rankings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 0;
+        }
+
+        .mma-weight-rank {
+            padding: 12px 16px;
+            border-right: 1px solid var(--mma-border);
+            border-bottom: 1px solid var(--mma-border);
+        }
+
+        .mma-weight-label {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--mma-red);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .mma-rank-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 0.8rem;
+            color: var(--white);
+        }
+
+        .mma-rank-num {
+            font-weight: 700;
+            color: var(--gray);
+            min-width: 24px;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+        }
+
+        /* ── MMA: News Feed ── */
+        .mma-news-section {
+            background: var(--mma-surface);
+            border: 1px solid var(--mma-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mma-news-header {
+            padding: 14px 18px;
+            background: var(--mma-surface-light);
+            border-bottom: 2px solid var(--mma-red);
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: var(--white);
+        }
+
+        .mma-news-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .mma-news-item {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--mma-border);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .mma-news-item:hover {
+            background: var(--mma-surface-light);
+        }
+
+        .mma-news-item:last-child {
+            border-bottom: none;
+        }
+
+        .mma-news-headline {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 4px;
+        }
+
+        .mma-news-desc {
+            font-size: 0.8rem;
+            color: var(--gray);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .mma-news-date {
+            font-size: 0.65rem;
+            color: var(--gray-dark);
+            margin-top: 4px;
+        }
+
+        /* ── MMA: Specific overrides for event detail ── */
+        .mma-event-detail-header {
+            background: var(--mma-surface-light);
+            padding: 18px 24px;
+            border-bottom: 2px solid var(--mma-red);
+            margin-bottom: 0;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .mma-event-detail-name {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--white);
+            text-transform: uppercase;
+        }
+
+        .mma-event-detail-meta {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 4px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .mma-event-detail-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .mma-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--mma-surface-light);
+            border: 1px solid var(--mma-border);
+            border-radius: 6px;
+            color: var(--gray);
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .mma-back-btn:hover {
+            background: var(--mma-red);
+            border-color: var(--mma-red);
+            color: var(--white);
+        }
     </style>
 </head>
 <body>
     <div class="jumbotron">
         <div class="jumbotron-inner">
             <div class="title-row">
-                <h1 class="site-title">MLB <span class="accent">HR</span> Matchups</h1>
+                <h1 class="site-title">SPORTS <span class="accent">ANALYTICS</span></h1>
             </div>
-            <p class="site-subtitle">Top HR batters vs opposing pitcher pitch mix</p>
-            <div class="date-control">
+            <p class="site-subtitle">Data-driven matchup analysis</p>
+            <div class="tab-nav">
+                <button id="tab-mlb" class="tab-btn active" onclick="switchTab('mlb')">MLB HR Matchups</button>
+                <button id="tab-mma" class="tab-btn mma-tab" onclick="switchTab('mma')">UFC / MMA</button>
+            </div>
+            <div id="mlb-controls" class="date-control">
                 <span class="date-label">Date:</span>
                 <input type="date" id="game-date" class="date-input" onchange="onDateChange(this.value)">
+            </div>
+            <div id="mma-controls" class="date-control" style="display: none;">
+                <span class="date-label">Date:</span>
+                <input type="date" id="mma-date" class="date-input" onchange="onMmaDateChange(this.value)">
             </div>
         </div>
     </div>
 
     <div class="main">
-        <div id="games-view" class="view active">
-            <div id="games-loading" class="loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>Loading games...</p>
-            </div>
-            <div id="top-matchups-section" class="top-matchups-section" style="display: none;">
-                <div class="section-header">
-                    <span class="section-icon">&#9889;</span>
-                    <span class="section-title">Top Matchups Today</span>
+        <!-- ── MLB TAB ── -->
+        <div id="mlb-tab" class="tab-content active">
+            <div id="games-view" class="view active">
+                <div id="games-loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading games...</p>
                 </div>
-                <div id="top-matchups-grid" class="top-matchups-grid"></div>
+                <div id="top-matchups-section" class="top-matchups-section" style="display: none;">
+                    <div class="section-header">
+                        <span class="section-icon">&#9889;</span>
+                        <span class="section-title">Top Matchups Today</span>
+                    </div>
+                    <div id="top-matchups-grid" class="top-matchups-grid"></div>
+                </div>
+                <div id="games-grid" class="game-grid"></div>
+                <div id="no-games" class="no-games" style="display: none;">
+                    <p>No games scheduled for this date.</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray-dark);">Try selecting a different date during the MLB season (April-October).</p>
+                </div>
             </div>
-            <div id="games-grid" class="game-grid"></div>
-            <div id="no-games" class="no-games" style="display: none;">
-                <p>No games scheduled for this date.</p>
-                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray-dark);">Try selecting a different date during the MLB season (April-October).</p>
+
+            <div id="detail-view" class="view">
+                <button class="back-button" onclick="showGamesView()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Games
+                </button>
+                <div id="detail-loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading matchup data...</p>
+                </div>
+                <div id="detail-content"></div>
             </div>
         </div>
 
-        <div id="detail-view" class="view">
-            <button class="back-button" onclick="showGamesView()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Back to Games
-            </button>
-            <div id="detail-loading" class="loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>Loading matchup data...</p>
+        <!-- ── MMA TAB ── -->
+        <div id="mma-tab" class="tab-content">
+            <div id="mma-events-view" class="view active">
+                <div id="mma-events-loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading events...</p>
+                </div>
+                <div id="mma-events-content">
+                    <div id="mma-events-grid-section">
+                        <div class="mma-section-title">Upcoming Events</div>
+                        <div id="mma-events-grid" class="mma-events-grid"></div>
+                    </div>
+                    <div id="mma-no-events" class="no-games" style="display: none;">
+                        <p>No events found.</p>
+                    </div>
+                    <div id="mma-rankings-container"></div>
+                    <div id="mma-news-container"></div>
+                </div>
             </div>
-            <div id="detail-content"></div>
+
+            <div id="mma-event-detail-view" class="view">
+                <button class="mma-back-btn" onclick="showMmaEventsView()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Events
+                </button>
+                <div id="mma-event-detail-loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading event details...</p>
+                </div>
+                <div id="mma-event-detail-content"></div>
+            </div>
         </div>
     </div>
 
@@ -1269,6 +1804,26 @@
         let currentGames = [];
         const gameDataCache = {};
         let topMatchupsController = null;
+        let currentTab = 'mlb';
+        let mmaCurrentDate = null;
+        let mmaCurrentEvents = [];
+        const mmaEventCache = {};
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('mlb-tab').classList.toggle('active', tab === 'mlb');
+            document.getElementById('mma-tab').classList.toggle('active', tab === 'mma');
+            document.getElementById('tab-mlb').classList.toggle('active', tab === 'mlb');
+            document.getElementById('tab-mma').classList.toggle('active', tab === 'mma');
+            document.getElementById('mlb-controls').style.display = tab === 'mlb' ? 'flex' : 'none';
+            document.getElementById('mma-controls').style.display = tab === 'mma' ? 'flex' : 'none';
+
+            if (tab === 'mlb' && !currentDate) {
+                init();
+            } else if (tab === 'mma' && !mmaCurrentDate) {
+                initMma();
+            }
+        }
 
         function init() {
             const savedDate = localStorage.getItem('mlb-matchups-date');
@@ -1776,6 +2331,303 @@
                 container.appendChild(splitsDiv);
             }
         }
+
+        // ── MMA / UFC JavaScript ──
+
+        function initMma() {
+            const savedDate = localStorage.getItem('mma-events-date');
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const initialDate = savedDate || today;
+            document.getElementById('mma-date').value = initialDate;
+            mmaCurrentDate = initialDate;
+            loadMmaEvents(initialDate);
+        }
+
+        function onMmaDateChange(selectedDate) {
+            mmaCurrentDate = selectedDate;
+            localStorage.setItem('mma-events-date', selectedDate);
+            showMmaEventsView();
+            loadMmaEvents(selectedDate);
+        }
+
+        async function loadMmaEvents(dateStr) {
+            const loadingEl = document.getElementById('mma-events-loading');
+            const contentEl = document.getElementById('mma-events-content');
+            const noEventsEl = document.getElementById('mma-no-events');
+
+            loadingEl.style.display = 'block';
+            contentEl.style.display = 'none';
+            noEventsEl.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/mma/scoreboard?date_str=${dateStr}`);
+                const data = await res.json();
+                const events = data.events || [];
+
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+
+                if (events.length === 0) {
+                    noEventsEl.style.display = 'block';
+                    document.getElementById('mma-events-grid-section').style.display = 'none';
+                    document.getElementById('mma-rankings-container').innerHTML = '';
+                    document.getElementById('mma-news-container').innerHTML = '';
+                    return;
+                }
+
+                document.getElementById('mma-events-grid-section').style.display = 'block';
+                renderMmaEvents(events);
+                mmaCurrentEvents = events;
+
+                loadMmaRankings();
+                loadMmaNews();
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+                noEventsEl.style.display = 'block';
+                noEventsEl.innerHTML = '<p>Failed to load events. Please try again.</p>';
+            }
+        }
+
+        function renderMmaEvents(events) {
+            const gridEl = document.getElementById('mma-events-grid');
+            gridEl.innerHTML = '';
+
+            events.forEach((evt, idx) => {
+                const card = document.createElement('div');
+                card.className = 'mma-event-card animate-in';
+                card.style.animationDelay = `${idx * 0.05}s`;
+                card.onclick = () => loadMmaEventDetail(evt.id, evt.date_str);
+
+                let statusClass = 'status-upcoming';
+                let statusText = evt.status || 'Upcoming';
+                if (statusText.toLowerCase().includes('final') || statusText.toLowerCase().includes('complete')) {
+                    statusClass = 'status-finished';
+                    statusText = 'Completed';
+                } else if (statusText.toLowerCase().includes('live') || statusText.toLowerCase().includes('progress')) {
+                    statusClass = 'status-live';
+                    statusText = 'LIVE';
+                }
+
+                const fighterNames = evt.fighters && evt.fighters.length >= 2
+                    ? `${evt.fighters[0]}<span class="vs-dot">vs</span>${evt.fighters[1]}`
+                    : '';
+
+                const evtDate = evt.date ? new Date(evt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBA';
+
+                card.innerHTML = `
+                    <div class="mma-event-card-header">
+                        <div class="mma-event-card-name">${evt.name}</div>
+                        <div class="mma-event-card-date">${evtDate}</div>
+                    </div>
+                    <div class="mma-event-card-body">
+                        <div class="mma-event-card-venue">${evt.venue}${evt.location ? ', ' + evt.location : ''}</div>
+                        ${fighterNames ? `<div class="mma-event-card-main-event">Main Event</div><div class="mma-event-card-fighters">${fighterNames}</div>` : ''}
+                        <span class="mma-event-card-status ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+                gridEl.appendChild(card);
+            });
+        }
+
+        async function loadMmaRankings() {
+            try {
+                const res = await fetch('/api/mma/rankings');
+                const data = await res.json();
+                const rankings = data.rankings || [];
+
+                const container = document.getElementById('mma-rankings-container');
+                if (rankings.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = `<div class="mma-rankings-section">
+                    <div class="mma-rankings-header">UFC Rankings</div>
+                    <div class="mma-rankings-grid">`;
+
+                rankings.forEach(r => {
+                    if (!r.fighters || r.fighters.length === 0) return;
+                    html += `<div class="mma-weight-rank">
+                        <div class="mma-weight-label">${r.weightClass}</div>`;
+                    r.fighters.slice(0, 10).forEach(f => {
+                        html += `<div class="mma-rank-item">
+                            <span class="mma-rank-num">#${f.rank}</span>
+                            <span>${f.name}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                });
+
+                html += '</div></div>';
+                container.innerHTML = html;
+            } catch (e) {
+                document.getElementById('mma-rankings-container').innerHTML = '';
+            }
+        }
+
+        async function loadMmaNews() {
+            try {
+                const res = await fetch('/api/mma/news?limit=10');
+                const data = await res.json();
+                const articles = data.articles || [];
+
+                const container = document.getElementById('mma-news-container');
+                if (articles.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = `<div class="mma-news-section">
+                    <div class="mma-news-header">Latest News</div>
+                    <div class="mma-news-list">`;
+
+                articles.forEach(a => {
+                    const pubDate = a.published ? new Date(a.published).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                    html += `<a class="mma-news-item" href="${a.link || '#'}" target="_blank" rel="noopener" style="text-decoration: none; display: block;">
+                        <div class="mma-news-headline">${a.headline}</div>
+                        ${a.description ? `<div class="mma-news-desc">${a.description}</div>` : ''}
+                        ${pubDate ? `<div class="mma-news-date">${pubDate}</div>` : ''}
+                    </a>`;
+                });
+
+                html += '</div></div>';
+                container.innerHTML = html;
+            } catch (e) {
+                document.getElementById('mma-news-container').innerHTML = '';
+            }
+        }
+
+        async function loadMmaEventDetail(eventId, eventDate) {
+            showMmaEventDetailView();
+
+            const loadingEl = document.getElementById('mma-event-detail-loading');
+            const contentEl = document.getElementById('mma-event-detail-content');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            const cacheKey = `mma_event_${eventId}`;
+            if (mmaEventCache[cacheKey]) {
+                loadingEl.style.display = 'none';
+                renderMmaEventDetail(mmaEventCache[cacheKey]);
+                return;
+            }
+
+            try {
+                const dateParam = eventDate ? `event_date=${eventDate}` : '';
+                const queryString = dateParam ? `?${dateParam}` : '';
+                const res = await fetch(`/api/mma/event/${eventId}${queryString}`);
+                const data = await res.json();
+
+                loadingEl.style.display = 'none';
+
+                if (data.error) {
+                    contentEl.innerHTML = `<div class="no-data">${data.error}</div>`;
+                    return;
+                }
+
+                mmaEventCache[cacheKey] = data;
+                renderMmaEventDetail(data);
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = '<div class="no-data">Failed to load event details. Please try again.</div>';
+            }
+        }
+
+        function renderMmaEventDetail(eventData) {
+            const contentEl = document.getElementById('mma-event-detail-content');
+            const fights = eventData.fights || [];
+
+            const evtDate = eventData.event_date
+                ? new Date(eventData.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+                : 'TBA';
+
+            let fightsHtml = '';
+            fights.forEach((fight, idx) => {
+                const isMainEvent = idx === 0;
+                const fighterA = fight.fighter_a;
+                const fighterB = fight.fighter_b;
+
+                const orderLabel = isMainEvent ? 'Main Event' : `Fight ${idx + 1}`;
+                const aResult = (fighterA?.result || 'PENDING').toUpperCase();
+                const bResult = (fighterB?.result || 'PENDING').toUpperCase();
+
+                const aResultClass = aResult === 'WINNER' ? 'result-win' : (aResult === 'LOSER' ? 'result-loss' : 'result-pending');
+                const bResultClass = bResult === 'WINNER' ? 'result-win' : (bResult === 'LOSER' ? 'result-loss' : 'result-pending');
+
+                const aResultText = aResult === 'WINNER' ? 'WIN' : (aResult === 'LOSER' ? 'LOSS' : '');
+                const bResultText = bResult === 'WINNER' ? 'WIN' : (bResult === 'LOSER' ? 'LOSS' : '');
+
+                fightsHtml += `
+                    <div class="mma-fight-row" style="${isMainEvent ? 'border-left: 3px solid var(--mma-red);' : ''}">
+                        <div class="mma-fight-header">
+                            <span class="mma-fight-weight">${fight.weight_class || 'TBD'}</span>
+                            <span class="mma-fight-order">${orderLabel}</span>
+                        </div>
+                        <div class="mma-fight-matchup">
+                            <div class="mma-fighter-block${aResult === 'WINNER' ? ' winner' : ''}">
+                                ${fighterA?.headshot ? `<img class="mma-fighter-photo" src="${fighterA.headshot}" alt="${fighterA.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                                <div class="mma-fighter-name">${fighterA?.name || 'TBD'}</div>
+                                ${fighterA?.record ? `<div class="mma-fighter-record">${fighterA.record}</div>` : ''}
+                                ${fighterA?.odds ? `<div class="mma-fighter-odds">${fighterA.odds}</div>` : ''}
+                                ${aResultText ? `<div class="mma-fighter-result ${aResultClass}">${aResultText}</div>` : ''}
+                            </div>
+                            <div class="mma-fight-vs">VS</div>
+                            <div class="mma-fighter-block${bResult === 'WINNER' ? ' winner' : ''}">
+                                ${fighterB?.headshot ? `<img class="mma-fighter-photo" src="${fighterB.headshot}" alt="${fighterB.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                                <div class="mma-fighter-name">${fighterB?.name || 'TBD'}</div>
+                                ${fighterB?.record ? `<div class="mma-fighter-record">${fighterB.record}</div>` : ''}
+                                ${fighterB?.odds ? `<div class="mma-fighter-odds">${fighterB.odds}</div>` : ''}
+                                ${bResultText ? `<div class="mma-fighter-result ${bResultClass}">${bResultText}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="mma-fight-detail-info">
+                            <div class="mma-fight-stats-row">
+                                ${fighterA?.height ? `<span><span class="stat-label-mini">A:</span> <span class="stat-val-mini">${fighterA.height}</span></span>` : ''}
+                                ${fighterB?.height ? `<span><span class="stat-label-mini">B:</span> <span class="stat-val-mini">${fighterB.height}</span></span>` : ''}
+                                ${fighterA?.stance ? `<span><span class="stat-label-mini">${fighterA.stance}</span></span>` : ''}
+                                ${fighterB?.stance ? `<span><span class="stat-label-mini">${fighterB.stance}</span></span>` : ''}
+                            </div>
+                            ${fight.status_detail ? `<span style="font-size:0.7rem;color:var(--gray);">${fight.status_detail}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentEl.innerHTML = `
+                <div class="game-section" style="border-color: var(--mma-border);">
+                    <div class="mma-event-detail-header">
+                        <div class="mma-event-detail-name">${eventData.event_name}</div>
+                        <div class="mma-event-detail-meta">
+                            <span>${evtDate}</span>
+                            ${eventData.venue ? `<span>${eventData.venue}</span>` : ''}
+                            ${eventData.location ? `<span>${eventData.location}</span>` : ''}
+                            ${eventData.status ? `<span>${eventData.status}</span>` : ''}
+                        </div>
+                        ${eventData.notes_headline ? `<div style="margin-top:8px; font-size:0.8rem; color: var(--mma-red); font-style: italic;">${eventData.notes_headline}</div>` : ''}
+                    </div>
+                    <div style="padding: 12px;">
+                        ${fights.length > 0 ? `<div class="mma-fight-list">${fightsHtml}</div>` : '<div class="no-data">No fight data available.</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function showMmaEventsView() {
+            document.getElementById('mma-events-view').classList.add('active');
+            document.getElementById('mma-event-detail-view').classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMmaEventDetailView() {
+            document.getElementById('mma-events-view').classList.remove('active');
+            document.getElementById('mma-event-detail-view').classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ── Init ──
 
         init();
     </script>
